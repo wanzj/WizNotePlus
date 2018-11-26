@@ -250,6 +250,7 @@ public:
     QString getLocalLanguage();
     void OnSelectionChange(const QString& currentStyle);
     void saveCurrentNote();
+    void doPaste();
 
 private:
     void loadDocumentInWeb(WizEditorMode editorMode);

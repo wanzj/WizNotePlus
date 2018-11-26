@@ -7,6 +7,7 @@
 #include "share/WizSettings.h"
 #include "share/WizAnimateAction.h"
 #include "widgets/WizTableSelector.h"
+#include "share/WizUIBase.h"
 
 struct WIZACTION
 {
@@ -154,6 +155,7 @@ WIZACTION* WizActions::actionsData()
     return arrayActions;
 }
 
+const WizIconOptions ICON_OPTIONS = WizIconOptions(Qt::transparent, "#a6a6a6", Qt::transparent);
 /** 添加动作的同时，链接信号到父组件的槽函数
  *
  *  @param action 待添加的动作，是一个聚合类
@@ -171,7 +173,7 @@ WizShortcutAction *WizActions::addAction(WIZACTION& action, bool bUseExtraShortc
     WizShortcutAction* pAction = new WizShortcutAction(strText, m_parent);
     // 设置图标
     if (!strIconName.isEmpty()) {
-        pAction->setIcon(::WizLoadSkinIcon(m_app.userSettings().skin(), strIconName));
+        pAction->setIcon(::WizLoadSkinIcon(m_app.userSettings().skin(), strIconName, QSize(), ICON_OPTIONS));
     }
     // 设置快捷键
     pAction->setShortcut(strShortcut);

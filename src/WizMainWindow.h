@@ -134,10 +134,6 @@ protected:
     void moveEvent(QMoveEvent* ev);
     void keyPressEvent(QKeyEvent* ev);
 
-#ifdef Q_OS_MAC
-    virtual void paintEvent(QPaintEvent* event);
-#endif
-
 #ifdef USECOCOATOOLBAR
     virtual void showEvent(QShowEvent *event);
 #endif
@@ -293,6 +289,8 @@ public:
 
     void createNoteByTemplateCore(const TemplateData& tmplData);
 
+    //
+    void refreshAd();
 signals:
     void documentsViewTypeChanged(int);
     void documentsSortTypeChanged(int);

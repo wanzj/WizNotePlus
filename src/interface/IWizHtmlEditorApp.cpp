@@ -93,3 +93,8 @@ void IWizHtmlEditorApp::onNoteLoadFinished()
 {
     m_documentWebView->onNoteLoadFinished();
 }
+
+void IWizHtmlEditorApp::doPaste()
+{
+    m_documentWebView->doPaste();
+}
