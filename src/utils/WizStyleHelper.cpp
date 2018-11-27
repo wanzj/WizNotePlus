@@ -104,7 +104,7 @@ QPixmap WizStyleHelper::loadPixmap(const QString& strName)
     }
     //
     QString x2fileName = ::WizGetSkinResourceFileName(themeName(), strName + "@2x");
-    if (QFile::exists(x2fileName)) {
+    if (!x2fileName.isEmpty() && QFile::exists(x2fileName)) {
         QPixmap x2(x2fileName);
         qDebug() << x2.devicePixelRatio();
         x2.setDevicePixelRatio(1);
@@ -149,7 +149,7 @@ QString WizStyleHelper::createTempPixmap(const QString& strName)
     }
     //
     QString x2fileName = ::WizGetSkinResourceFileName(themeName(), strName + "@2x");
-    if (QFile::exists(x2fileName)) {
+    if (!x2fileName.isEmpty() && QFile::exists(x2fileName)) {
         QPixmap x2(x2fileName);
         if (x2.size() == scaledSize) {
             return x2fileName;

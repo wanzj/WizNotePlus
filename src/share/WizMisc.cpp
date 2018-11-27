@@ -1920,7 +1920,7 @@ QIcon WizLoadSkinIcon(const QString& strSkinName, const QString& strIconName, co
     }
     //
     QString fileName = WizGetSkinResourceFileName(strSkinName, strIconName);
-    if (!QFile::exists(fileName)) {
+    if (fileName.isEmpty() || !QFile::exists(fileName)) {
         return QIcon();
     }
 
