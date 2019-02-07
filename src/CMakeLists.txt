@@ -3,7 +3,7 @@ project(WizNote)
 add_subdirectory(test)
 
 #============================================================================
-# 准备头文件和源码
+# Sources
 #============================================================================
 
 set(wiznote_SOURCES_MAC
@@ -149,7 +149,7 @@ set(wiznote_SOURCES
     WizLineInputDialog.cpp
     WizDocumentHistory.cpp
     WizAttachmentListWidget.cpp
-    WizMainTabWidget.cpp
+    WizMainTabBrowser.cpp
     WizTagListWidget.cpp
     WizConsoleDialog.cpp
     WizPreferenceDialog.cpp
@@ -285,7 +285,7 @@ set(wiznote_HEADERS
     WizDocumentWebView.h
     WizDocumentHistory.h
     WizAttachmentListWidget.h
-    WizMainTabWidget.h
+    WizMainTabBrowser.h
     WizTagListWidget.h
     WizConsoleDialog.h
     WizPreferenceDialog.h
@@ -426,21 +426,23 @@ set(wiznote_RCS
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
-    ${CMAKE_SOURCE_DIR}/lib
-    ${CMAKE_SOURCE_DIR}/lib/quazip
-    ${CMAKE_SOURCE_DIR}/lib/gumbo-parser/src
-    ${CMAKE_SOURCE_DIR}/lib/gumbo-query/src
+    ${quazip_INCLUDE_DIRS}
+    ${zlib_INCLUDE_DIRS}
+    ${cryptopp_INCLUDE_DIRS}
+    ${OpenSSL_INCLUDE_DIRS}
+    ${Gumbo_INCLUDE_DIRS}
+    ${GumboQuery_INCLUDE_DIRS}
 )
 
 #============================================================================
-# Internal compiler options
+# Compilation
 #============================================================================
 
-# 执行QtChooser模块
+# Preprocess Qt related files.
 include(QtChooser)
-qt_add_ui(wiznote_FORM_HEADERS ${wiznote_FORMS}) # 添加ui 设计文件
-qt_add_resources(wiznote_RC ${wiznote_RCS}) # 添加资源文件
-qt_add_translation(wiznote_QM ${wiznote_TRANSLATIONS}) # 添加本地化文件
+qt_add_ui(wiznote_FORM_HEADERS ${wiznote_FORMS})
+qt_add_resources(wiznote_RC ${wiznote_RCS})
+qt_add_translation(wiznote_QM ${wiznote_TRANSLATIONS})
 
 message("WizNote whill compiling as ${CMAKE_BUILD_TYPE}, use Qt: ${QT_VERSION}")
 
@@ -525,11 +527,13 @@ if(UNIX)
         endforeach()
     endif()
 else()
-    # Windows 端
+    # Windows
     add_definitions(-DUNICODE=TRUE)
     add_definitions(-D_UNICODE=TRUE)
+    #add_compile_options("/utf-8") # UNICODE or _UNICODE may not work
     add_executable(WizNote WIN32 ${wiznote_SOURCES} ${wiznote_HEADERS} ${wiznote_FORM_HEADERS} ${wiznote_QM} ${wiznote_RC})
     set_target_properties(${PROJECT_NAME} PROPERTIES AUTOMOC_MOC_OPTIONS "-DQ_OS_WIN32")
+    find_package(Qt5Svg)
 
     install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
     install(DIRECTORY ${CMAKE_SOURCE_DIR}/share/ DESTINATION share/wiznote PATTERN ".DS_Store" EXCLUDE)
@@ -553,11 +557,6 @@ qt_suppress_warnings(WizNote)
 
 if (APPLE)
     include_directories(~/Library/Frameworks)
-elseif(WIN32)
-    include_directories(
-        ${CMAKE_SOURCE_DIR}/lib/zlib
-        ${CMAKE_BINARY_DIR}/lib/zlib
-        )
 endif()
 
 
@@ -566,58 +565,52 @@ link_directories(
 )
 
 #============================================================================
-# 第三方依赖
+# Linking libraries
 #============================================================================
 
 if(UNIX)
-	if(APPLE)
-		if(APPSTORE_BUILD)
-			target_link_libraries(${PROJECT_NAME}
-                quazip_static
-				#cryptopp-static
-                gumbo_query_static
-                Qt5::Svg
-				Qt5::WebEngine
-				Qt5::WebEngineWidgets
-				${CMAKE_DL_LIBS}
-                #${CONAN_LIBS}
-			)
-		else(APPSTORE_BUILD)
-			target_link_libraries(${PROJECT_NAME}
-                quazip_static
-				#cryptopp-static
-                gumbo_query_static
-                Qt5::Svg
-				Qt5::WebEngine
-				Qt5::WebEngineWidgets
-				${CMAKE_DL_LIBS}
-                #${CONAN_LIBS}
-			)
-		endif(APPSTORE_BUILD)
-	else(APPLE) #linux
-		target_link_libraries(${PROJECT_NAME}
+    if(APPLE)
+        if(APPSTORE_BUILD)
+            target_link_libraries(${PROJECT_NAME}
+                ${CMAKE_DL_LIBS}
+                ${cryptopp_LIBRARIES}
+                ${quazip_LIBRARIES}
+                ${zlib_LIBRARIES}
+                ${GumboQuery_LIBRARIES}
+                ${Gumbo_LIBRARIES}
+            )
+        else(APPSTORE_BUILD)
+            target_link_libraries(${PROJECT_NAME}
+                ${CMAKE_DL_LIBS}
+                ${cryptopp_LIBRARIES}
+                ${quazip_LIBRARIES}
+                ${zlib_LIBRARIES}
+                ${GumboQuery_LIBRARIES}
+                ${Gumbo_LIBRARIES}
+            )
+        endif(APPSTORE_BUILD)
+    else(APPLE)
+        # Linux: linking order is important.
+        target_link_libraries(${PROJECT_NAME}
             -lpthread
             X11
-            quazip_static
-			#cryptopp-static
-            gumbo_query_static
-            Qt5::Svg
-			Qt5::WebEngine
-			Qt5::WebEngineWidgets
-			${CMAKE_DL_LIBS}
-            ${CONAN_LIBS}
-		)
-	endif(APPLE)
+            ${CMAKE_DL_LIBS}
+            ${cryptopp_LIBRARIES}
+            ${OpenSSL_LIBRARIES}
+            ${quazip_LIBRARIES}
+            ${zlib_LIBRARIES}
+            ${GumboQuery_LIBRARIES}
+            ${Gumbo_LIBRARIES}
+        )
+    endif(APPLE)
 else(NOT UNIX)
-	target_link_libraries(${PROJECT_NAME}
-        quazip_static
-		#cryptopp-static
-        gumbo_query_static
-        Qt5::Svg
-		Qt5::WebEngine
-		Qt5::WebEngineWidgets
-		${CMAKE_DL_LIBS}
-        ${CONAN_LIBS}
-        Qt5::WinMain
-	)
+    target_link_libraries(${PROJECT_NAME}
+        ${CMAKE_DL_LIBS}
+        ${cryptopp_LIBRARIES}
+        ${OpenSSL_LIBRARIES}
+        ${quazip_LIBRARIES}
+        ${zlib_LIBRARIES}
+        ${GumboQuery_LIBRARIES}
+        ${Gumbo_LIBRARIES}
+    )
 endif()

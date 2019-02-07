@@ -38,7 +38,7 @@ WizWebSettingsDialog::WizWebSettingsDialog(QString url, QSize sz, QWidget *paren
     //
     WizMainWindow* mainWindow = WizGlobal::mainWindow();
     if (mainWindow) {
-        QObject* IWizExplorerApp = qobject_cast<QObject*>(mainWindow->interface());
+        QObject* IWizExplorerApp = qobject_cast<QObject*>(mainWindow->componentInterface());
         web->addToJavaScriptWindowObject("WizExplorerApp", IWizExplorerApp);
     }
     connect(web, SIGNAL(loadFinishedEx(bool)), SLOT(on_web_loaded(bool)));
@@ -135,6 +135,8 @@ WizWebSettingsWithTokenDialog* WizWebSettingsWithTokenDialog::delayShow(QString 
     dialog->m_delayShow = true;
     //
     dialog->load();
+    //
+    return dialog;
 }
 
 void WizWebSettingsWithTokenDialog::onLoaded(bool ok)

@@ -63,13 +63,14 @@ class WizDocumentWebView;
 class WizTrayIcon;
 class WizMobileFileReceiver;
 class ICore;
-class WizMainTabWidget;
+class WizMainTabBrowser;
 
 class WizMessageListView;
 class WizMessageSelector;
 class WizMessageListTitleBar;
 
 class WizDocumentView;
+class WizDocumentWebViewSaverThread;
 class WizSingleDocumentViewDelegate;
 class QWebEngineView;
 
@@ -121,7 +122,7 @@ public:
     //
     void trySaveCurrentNote(std::function<void(const QVariant &)> callback);
     //
-    void startExternalEditor(QString cacheFileName, QString Name, QString ProgramFile, QString Arguments, int TextEditor, int UTF8Encoding, const WIZDOCUMENTDATAEX& noteData);
+    void startExternalEditor(QString cacheFileName, const WizExternalEditorData& editorData, const WIZDOCUMENTDATAEX& noteData);
 
 protected:
     bool eventFilter(QObject* watched, QEvent* event);
@@ -144,6 +145,7 @@ private:
     WizUserSettings* m_settings;
     WizKMSyncThread* m_syncFull;
     WizKMSyncThread* m_syncQuick;
+    WizDocumentWebViewSaverThread* m_watchedDocSaver;
     WizUserVerifyDialog* m_userVerifyDialog;
     WizConsoleDialog* m_console;
     WizUpgradeChecker* m_upgrade;
@@ -195,7 +197,7 @@ private:
 
     WizDocumentSelectionView* m_documentSelection;
     WizDocumentView* m_doc; /**< 用于储存多标签浏览器里当前活动笔记文档视图。 */
-    WizMainTabWidget* m_mainTab; /**< 主标签部件，笔记文档视图储存在内部 */
+    WizMainTabBrowser* m_mainTabBrowser; /**< 主标签部件，笔记文档视图储存在内部 */
     std::shared_ptr<WizSplitter> m_splitter;
     QWidget* m_docListContainer;
     WizSingleDocumentViewDelegate* m_singleViewDelegate;
@@ -226,7 +228,7 @@ private:
     IWizExplorerApp* m_IWizExplorerApp;
     //
     QFileSystemWatcher* m_extFileWatcher;
-    QMap<QString, WIZDOCUMENTDATAEX> m_watchedFileData;
+    QMap<QString, WizExternalEditTask> m_watchedFileData;
 
 private:
     void initQuitHandler();
@@ -251,7 +253,7 @@ private:
     //
     void promptServiceExpr(bool free, WIZGROUPDATA group);
     //
-    void saveWatchedFile(const QString& path, int TextEditor, int UTF8Encoding);
+    void saveWatchedFile(const QString& path);
 
 public:
     // CWizDocument passthrough methods
@@ -261,6 +263,7 @@ public:
     WizDocumentListView* documentList() const { return m_documents; }
     WizKMSyncThread* fullSync() const { return m_syncFull; }
     WizKMSyncThread* quickSync() const { return m_syncQuick; }
+    WizDocumentWebViewSaverThread* watchedDocSaver() { return m_watchedDocSaver; }
     void quickSyncKb(const QString& kbGuid);
     void setNeedResetGroups();
 
@@ -271,7 +274,7 @@ public:
     WizProgressDialog* progressDialog() const { return m_progress; }
     WizIAPDialog* iapDialog();
 
-    QObject* interface();
+    QObject* componentInterface();
 
     void resetPermission(const QString& strKbGUID, const QString& strDocumentOwner);
     void viewDocument(const WIZDOCUMENTDATAEX& data, bool addToHistory);
@@ -291,6 +294,8 @@ public:
 
     //
     void refreshAd();
+    WizMainTabBrowser* mainTabView();
+
 signals:
     void documentsViewTypeChanged(int);
     void documentsSortTypeChanged(int);
@@ -480,6 +485,8 @@ public Q_SLOTS:
 
     void setCurrentDocumentView(WizDocumentView* newDocView);
     void on_mainTabWidget_currentChanged(int pageIndex);
+
+    void onWatchedDocumentChanged(const QString& fileName);
 
 public:
     // WizExplorerApp pointer
