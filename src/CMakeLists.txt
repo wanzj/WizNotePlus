@@ -209,6 +209,8 @@ set(wiznote_SOURCES
     interface/IWizDocumentListCtrl.cpp
     interface/IWizDatabase.cpp
     interface/IWizExplorerApp.cpp
+    
+    WizPlugins.cpp
 )
 
 set(wiznote_HEADERS
@@ -384,6 +386,8 @@ set(wiznote_HEADERS
     interface/IWizDocumentListCtrl.h
     interface/IWizDatabase.h
     interface/IWizExplorerApp.h
+    
+    WizPlugins.h
 )
 
 set(wiznote_FORMS
@@ -474,7 +478,7 @@ if(UNIX)
         find_library(_COCOA_LIBRARY Cocoa)
         find_library(_WEBENGINE_LIBRARY WebEngine)
         find_library(_WEBENGINEWIDGETS_LIBRARY WebEngineWidgets)
-        find_library(_WEBENGINE_LIBRARY WebEngine)
+        find_library(_WEBCHANNEL_LIBRARY WebChannel)
         find_library(_STORE_LIBRARY StoreKit)
         find_library(_IO_LIBRARY IOKit)
         find_package(Qt5Svg)

@@ -3155,7 +3155,6 @@ bool WizDatabase::updateDocumentData(WIZDOCUMENTDATA& data,
                                       int nFlags,
                                       bool notifyDataModify /*= true*/)
 {
-    m_mtxTempFile.lock();
     QString strProcessedHtml(strHtml);
     // resources path
     QString strResourcePath = GetResoucePathFromFile(strURL); // HTML文件对应的资源文件夹index_files路径
@@ -3163,8 +3162,7 @@ bool WizDatabase::updateDocumentData(WIZDOCUMENTDATA& data,
         QUrl urlResource = QUrl::fromLocalFile(strResourcePath); // 将平台特异性路径转变成统一的QUrl
         strProcessedHtml.replace(urlResource.toString(), "index_files/"); // 将HTML字符串内所有绝对路径转换成相对路径
     }
-    m_mtxTempFile.unlock();
-    // check if note is encrypted or not
+    //
     if (isEncryptAllData())
         data.nProtected = 1;
     //
@@ -4289,9 +4287,6 @@ bool WizDatabase::documentToTempHtmlFile(const WIZDOCUMENTDATA& document,
 bool WizDatabase::documentToHtmlFile(const WIZDOCUMENTDATA& document,
                                           const QString& strPath)
 {
-    QMutexLocker locker(&m_mtxTempFile);
-    //
-    //
     //避免编辑的时候临时文件被删除导致图片等丢失
     //::WizDeleteAllFilesInFolder(strPath);
     ::WizEnsurePathExists(strPath);

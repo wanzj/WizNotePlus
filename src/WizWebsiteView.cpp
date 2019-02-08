@@ -20,11 +20,11 @@ WizWebsiteView::WizWebsiteView(WizExplorerApp& app, QWidget* parent)
     this->setLayout(layout);
     // 创建网页视图
     m_webView = new WizWebEngineView(this);
-    WizWebEnginePage* webPage = new WizWebEnginePage(m_webView);
-    m_webView->setPage(webPage);
-    //
     WizMainWindow* mainWindow = qobject_cast<WizMainWindow*>(m_app.mainWindow());
-    m_webView->addToJavaScriptWindowObject("WizExplorerApp", mainWindow->componentInterface());
+    WizWebEnginePage* webPage = new WizWebEnginePage({
+        {"WizExplorerApp", mainWindow->componentInterface()},
+    }, m_webView);
+    m_webView->setPage(webPage);
     //
     layout->addWidget(m_webView);
     m_webView->show();

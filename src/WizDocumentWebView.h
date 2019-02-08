@@ -133,7 +133,7 @@ class WizDocumentWebViewPage: public WizWebEnginePage
     Q_OBJECT
 
 public:
-    explicit WizDocumentWebViewPage(WizDocumentWebView* parent);
+    explicit WizDocumentWebViewPage(const WizWebEngineViewInjectObjects& objects, WizDocumentWebView* parent);
     virtual bool acceptNavigationRequest(const QUrl &url, QWebEnginePage::NavigationType type, bool isMainFrame);
     virtual void triggerAction(WebAction action, bool checked = false);
     virtual void javaScriptConsoleMessage(JavaScriptConsoleMessageLevel level, const QString& message, int lineNumber, const QString& sourceID);
@@ -253,10 +253,12 @@ public:
     QString getLocalLanguage();
     void OnSelectionChange(const QString& currentStyle);
     void saveCurrentNote();
+    void onReturn();
     void doPaste();
 
 private:
     void initEditorActions();
+    void saveAsPDFCore(std::function<void()> callback);
     //
     void loadDocumentInWeb(WizEditorMode editorMode);
     //
@@ -324,12 +326,14 @@ private:
 
 public:
     void onNoteLoadFinished(); // editor callback
+    IWizHtmlEditorApp* htmlEditorApp() { return m_htmlEditorApp; }
 
 public Q_SLOTS:
     void onActionTriggered(QWebEnginePage::WebAction act);
 
     void onEditorLoadFinished(bool ok);
     void onEditorLinkClicked(QUrl url, QWebEnginePage::NavigationType navigationType, bool isMainFrame, WizWebEnginePage* page);
+    void onOpenLinkInNewWindow(QUrl url);
 
     void onTimerAutoSaveTimout();
 
