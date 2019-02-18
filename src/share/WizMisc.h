@@ -167,6 +167,12 @@ struct WizIconOptions
 
 QIcon WizLoadSkinIcon(const QString& strSkinName, const QString& strIconName, const QSize& iconSize = QSize(16, 16), const WizIconOptions& options = WizIconOptions());
 
+QPixmap WizLoadPixmapIcon(const QString& strSkinName, const QString& strIconName, const QSize& iconSize);
+QIcon WizLoadSkinIconEx(const QString& strSkinName, const QString& strIconName,
+                      QIcon::Mode mode = QIcon::Normal, QIcon::State state = QIcon::Off);
+QIcon WizLoadSkinIconEx(const QString& strSkinName, const QString& strIconName, const QSize& iconSize,
+                      QIcon::Mode mode = QIcon::Normal, QIcon::State state = QIcon::Off);
+
 bool WizCreateThumbnailForAttachment(QImage& img, const QString& attachFileName, const QSize& iconSize);
 
 QString WizGetHtmlBodyContent(const QString& strHtml);

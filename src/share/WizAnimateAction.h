@@ -65,6 +65,7 @@ public:
 private:    
     WizAnimateContainerBase* m_target;
     int m_nIconIndex;
+    QIcon m_iconDefault;
     QList<QIcon> m_icons;
     QTimer* m_timer;
 

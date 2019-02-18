@@ -28,7 +28,8 @@
 namespace Utils {
 
 WizSettings* WizStyleHelper::m_settings = 0;
-#define BADGE_ICON_SIZE QSize(WizSmartScaleUI(14), WizSmartScaleUI(14))
+#define BADGE_ICON_SIZE QSize(WizSmartScaleUIEx(14), WizSmartScaleUIEx(14))
+#define BADGE_SIZE QSize(14, 14)
 
 void WizStyleHelper::initPainterByDevice(QPainter* p)
 {
@@ -108,16 +109,17 @@ QPixmap WizStyleHelper::loadPixmap(const QString& strName)
     //
     QPixmap org(fileName);
     QSize orgSize = org.size();
-    QSize scaledSize = QSize(WizSmartScaleUI(orgSize.width()), WizSmartScaleUI(orgSize.height()));
+    QSize scaledSize = QSize(WizSmartScaleUIEx(orgSize.width()), WizSmartScaleUIEx(orgSize.height()));
     if (orgSize == scaledSize) {
         return org;
     }
     //
     QString x2fileName = ::WizGetSkinResourceFileName(themeName(), strName + "@2x");
+    qDebug() << x2fileName;
     if (!x2fileName.isEmpty() && QFile::exists(x2fileName)) {
         QPixmap x2(x2fileName);
-        qDebug() << x2.devicePixelRatio();
-        x2.setDevicePixelRatio(1);
+        //qDebug() << x2.devicePixelRatio();
+        //x2.setDevicePixelRatio(1);
         if (x2.size() == scaledSize) {
             return x2;
         }
@@ -906,7 +908,7 @@ QRect WizStyleHelper::drawBadgeIcon(QPainter* p, const QRect& rc, BadgeType nTyp
 {
     QIcon attachIcon(listViewBadge(nType));
     //
-    QSize iconSize = BADGE_ICON_SIZE;
+    QSize iconSize = BADGE_SIZE;
     QRect rcb = rc.adjusted(0, margin(), 0, 0);
     rcb.setSize(iconSize);
     if (bSelect && bFocus) {
@@ -1222,7 +1224,7 @@ void WizStyleHelper::drawListViewItemThumb(QPainter* p, const QRect& rc, int nBa
     QRect rcSummary(rcd.adjusted(0, nLeadHeight + WizSmartScaleUI(8), 0, 0));
     if (nBadgeType & DocTypeEncrytedInSummary) {
         QIcon badgeIcon(listViewBadge(BadgeEncryptedInSummary));
-        QSize sz = BADGE_ICON_SIZE;
+        QSize sz = BADGE_SIZE;
         QRect rcPix(rcSummary.x() + (rcSummary.width() - sz.width()) / 2, rcSummary.y() + (rcSummary.height() - sz.height()) / 2,
                     sz.width(), sz.height());
         if (bSelected && bFocused) {

@@ -411,12 +411,16 @@ long wiz_strtoul(const unsigned short* nptr, QChar endchar, int base)
     return ctr.toLong(NULL, base);
 }
 
+/**
+ * @brief This is a deprecated method, please use WizSmartScaleEx instead.
+ * @return
+ */
 int WizSmartScaleUI(int spec)
 {
 #ifdef Q_OS_MAC
     return spec;
 #else
-    /*
+
     static double rate = 0;
 
     if (0 == static_cast<int>(rate))
@@ -463,14 +467,15 @@ int WizSmartScaleUI(int spec)
         }
     }
     //
-    */
-    int rate = 1;
-    //
     return int(spec * rate);
     //
 #endif
 }
 
+/**
+ * @brief Scale UI related size according to user's DPI settings.
+ * @return 
+ */
 int WizSmartScaleUIEx(int spec)
 {
     qreal rate = GetDevicePixelRatio();

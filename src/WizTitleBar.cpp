@@ -52,7 +52,7 @@
 #define WIZACTION_TITLEBAR_SHARE_DOCUMENT_BY_LINK QObject::tr("Share by Link")
 #define WIZACTION_TITLEBAR_SHARE_DOCUMENT_BY_EMAIL QObject::tr("Share by Email")
 
-#define TITLE_BUTTON_ICON_SIZE       WizSmartScaleUI(14)
+#define TITLE_BUTTON_ICON_SIZE       WizSmartScaleUIEx(14)
 static const WizIconOptions ICON_OPTIONS(WIZ_TINT_COLOR, "#a6a6a6", WIZ_TINT_COLOR);
 static const WizIconOptions CHECKABLE_ICON_OPTIONS(WIZ_TINT_COLOR, "#a6a6a6", WIZ_TINT_COLOR);
 

@@ -166,6 +166,11 @@ CString WizMisc::extractTitleTemplate(const CString& strFileName)
     return strFileName;
 }
 
+/**
+ * @brief Get suffix of specified file name.
+ * @param strFileName
+ * @return
+ */
 CString WizMisc::extractFileExt(const CString& strFileName)
 {
     CString strName = extractFileName(strFileName);

@@ -117,6 +117,8 @@ void TabButton::drawTabBtn(const QStyleOptionButton *opt, QPainter *p, const QWi
 // class WizMainTabBrowser
 //-------------------------------------------------------------------
 
+#define TAB_BUTTON_ICON_SIZE WizSmartScaleUIEx(16)
+
 WizMainTabBrowser::WizMainTabBrowser(WizExplorerApp& app, QWidget *parent)
     : QTabWidget(parent)
     , m_app(app)
@@ -264,7 +266,7 @@ void WizMainTabBrowser::setupTab(QWidget *wgt)
     int index = indexOf(wgt);
     if (index != -1) {
         TabButton* closeBtn = new TabButton(this->tabBar());
-        closeBtn->setIcon(WizLoadSkinIcon(m_strTheme, "tab_close", QSize(16, 16)));
+        closeBtn->setIcon(WizLoadSkinIconEx(m_strTheme, "tab_close", QSize(TAB_BUTTON_ICON_SIZE, TAB_BUTTON_ICON_SIZE)));
         connect(closeBtn, &QAbstractButton::clicked, this, [this, wgt](){
             int currentIndex = indexOf(wgt);
             emit this->tabBar()->tabCloseRequested(currentIndex);
@@ -362,7 +364,7 @@ void WizMainTabBrowser::lockTab(int index)
         QWidget* tb = tabBar()->tabButton(index, QTabBar::RightSide);
         TabButton* tabBtn = qobject_cast<TabButton*>(tb);
         if (tabBtn) {
-            tabBtn->setIcon(WizLoadSkinIcon(m_strTheme, "tab_lock", QSize(16, 16)));
+            tabBtn->setIcon(WizLoadSkinIconEx(m_strTheme, "tab_lock", QSize(TAB_BUTTON_ICON_SIZE, TAB_BUTTON_ICON_SIZE)));
             tabBtn->disconnect();
             status["Locked"] = QVariant(true);
             tabBar()->setTabData(index, status);
@@ -377,7 +379,7 @@ void WizMainTabBrowser::unlockTab(int index)
         QWidget* tb = tabBar()->tabButton(index, QTabBar::RightSide);
         TabButton* tabBtn = qobject_cast<TabButton*>(tb);
         if (tabBtn) {
-            tabBtn->setIcon(WizLoadSkinIcon(m_strTheme, "tab_close", QSize(16, 16)));
+            tabBtn->setIcon(WizLoadSkinIconEx(m_strTheme, "tab_close", QSize(TAB_BUTTON_ICON_SIZE, TAB_BUTTON_ICON_SIZE)));
             connect(tabBtn, &QAbstractButton::clicked, this, [this, index](){
                 emit this->tabBar()->tabCloseRequested(index);
             });

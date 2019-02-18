@@ -1923,7 +1923,7 @@ QIcon WizLoadSkinIcon(const QString& strSkinName, const QString& strIconName, co
 {
     QSize size = iconSize;
     if (size.isEmpty() || size.isNull() || !size.isValid()) {
-        size = QSize(WizSmartScaleUI(16), WizSmartScaleUI(16));
+        size = QSize(WizSmartScaleUIEx(16), WizSmartScaleUIEx(16));
     }
     //
     QString fileName = WizGetSkinResourceFileName(strSkinName, strIconName);
@@ -1938,6 +1938,112 @@ QIcon WizLoadSkinIcon(const QString& strSkinName, const QString& strIconName, co
     QIcon icon = svg2Icon(fileName, size, options);
     //
     return icon;
+}
+
+/** Re-add it for backward compatibility. */
+QPixmap WizLoadPixmapIcon(const QString& strSkinName, const QString& strIconName, const QSize& iconSize)
+{
+    static int rate = 0;
+    //if (!rate) {
+        //
+    //rate = WizSmartScaleUI(100);
+    rate = static_cast<int>(100 * GetDevicePixelRatio());
+    //}
+    //
+    if (rate < 175) {
+        //
+        //don't scale image
+        QString strIconNormal = WizGetSkinResourceFileName(strSkinName, strIconName);
+        return QPixmap(strIconNormal);
+        //
+    } else {
+        //
+        //using 2x
+        QString strIconNormal = WizGetSkinResourceFileName(strSkinName, strIconName);
+        QString strIcon2x = WizGetSkinResourceFileName(strSkinName, strIconName + "@2x");
+        //
+        if (!strIcon2x.isEmpty() && QFile::exists(strIcon2x)) {
+            return QPixmap(strIcon2x);
+        }
+        //
+        return QPixmap(strIconNormal);
+    }
+
+}
+
+/** This is the old version of WizLoadSkinIcon, re-add it for backward compatibility. */
+QIcon WizLoadSkinIconEx(const QString& strSkinName, const QString& strIconName,
+                      QIcon::Mode mode /* = QIcon::Normal */, QIcon::State state /* = QIcon::Off */)
+{
+    return WizLoadSkinIconEx(strSkinName, strIconName, QSize(), mode, state);
+}
+
+/** This is the old version of WizLoadSkinIcon, re-add it for backward compatibility. */
+QIcon WizLoadSkinIconEx(const QString& strSkinName, const QString& strIconName, const QSize& iconSize,
+                      QIcon::Mode mode /* = QIcon::Normal */, QIcon::State state /* = QIcon::Off */)
+{
+    Q_UNUSED(mode);
+    Q_UNUSED(state);
+
+
+ #ifdef Q_OS_MAC
+
+    Q_UNUSED(iconSize);
+
+    QString strIconNormal = WizGetSkinResourceFileName(strSkinName, strIconName);
+    QString strIconActive1 = WizGetSkinResourceFileName(strSkinName, strIconName + "_on");
+    QString strIconActive2 = WizGetSkinResourceFileName(strSkinName, strIconName + "_selected");
+
+
+    if (!strIconNormal.isEmpty() && !QFile::exists(strIconNormal)) {
+        //TOLOG1("Can't load icon: ", strIconName);
+        return QIcon();
+    }
+
+    QIcon icon;
+    icon.addFile(strIconNormal, QSize(), QIcon::Normal, QIcon::Off);
+
+    // used for check state
+    if (!strIconActive1.isEmpty() && QFile::exists(strIconActive1)) {
+        icon.addFile(strIconActive1, QSize(), QIcon::Active, QIcon::On);
+    }
+
+    // used for sunken state
+    if (!strIconActive2.isEmpty() && QFile::exists(strIconActive2)) {
+        icon.addFile(strIconActive2, QSize(), QIcon::Active, QIcon::Off);
+    }
+
+    return icon;
+#else
+    QString strIconNormal = strIconName;
+    QString strIconActive1 = strIconName + "_on";
+    QString strIconActive2 = strIconName + "_selected";
+
+
+    if (!WizGetSkinResourceFileName(strSkinName, strIconNormal).isEmpty() && !QFile::exists(WizGetSkinResourceFileName(strSkinName, strIconNormal))) {
+        //TOLOG1("Can't load icon: ", strIconName);
+        return QIcon();
+    }
+
+    QPixmap pixmapNormal = WizLoadPixmapIcon(strSkinName, strIconNormal, iconSize);
+
+    QIcon icon;
+    icon.addPixmap(pixmapNormal, QIcon::Normal, QIcon::Off);
+
+    // used for check state
+    if (!WizGetSkinResourceFileName(strSkinName, strIconActive1).isEmpty() && QFile::exists(WizGetSkinResourceFileName(strSkinName, strIconActive1))) {
+        QPixmap pixmapActive1 = WizLoadPixmapIcon(strSkinName, strIconActive1, iconSize);
+        icon.addPixmap(pixmapActive1, QIcon::Active, QIcon::On);
+    }
+
+    // used for sunken state
+    if (!WizGetSkinResourceFileName(strSkinName, strIconActive2).isEmpty() && QFile::exists(WizGetSkinResourceFileName(strSkinName, strIconActive2))) {
+        QPixmap pixmapActive2 = WizLoadPixmapIcon(strSkinName, strIconActive2, iconSize);
+        icon.addPixmap(pixmapActive2, QIcon::Active, QIcon::Off);
+    }
+
+    return icon;
+#endif
 }
 
 // FIXME: obosolete, use CWizHtmlToPlainText class instead!

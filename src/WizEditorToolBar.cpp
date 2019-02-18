@@ -1153,7 +1153,10 @@ WizEditorToolBar::WizEditorToolBar(WizExplorerApp& app, QWidget *parent)
     connect(m_comboFontSize, SIGNAL(activated(const QString&)),
             SLOT(on_comboFontSize_indexChanged(const QString&)));
 
-    QSize editIconSize = QSize(Utils::WizStyleHelper::editIconHeight(), Utils::WizStyleHelper::editIconHeight());
+    QSize editIconSize = QSize(
+        WizSmartScaleUIEx(Utils::WizStyleHelper::editIconHeight()), 
+        WizSmartScaleUIEx(Utils::WizStyleHelper::editIconHeight())
+    );
 
     m_btnFormatPainter = new CWizToolButton(this);
     m_btnFormatPainter->setIcon(::WizLoadSkinIcon(skin, "formatter", editIconSize, ICON_OPTIONS));

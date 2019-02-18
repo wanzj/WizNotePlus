@@ -23,11 +23,13 @@ WizAnimateAction::WizAnimateAction(QObject* parent)
 void WizAnimateAction::setAction(QAction* action)
 {
     m_target = new WizAnimateActionContainer(action, this);
+    m_iconDefault = m_target->icon();
 }
 
 void WizAnimateAction::setToolButton(QToolButton* button)
 {
     m_target = new WizAnimateButtonContainer(button, this);
+    m_iconDefault = m_target->icon();
 }
 
 void WizAnimateAction::setSingleIcons(const QString& strIconBaseName, QSize size)
@@ -37,7 +39,7 @@ void WizAnimateAction::setSingleIcons(const QString& strIconBaseName, QSize size
     while (1)
     {
         QString iconName = strIconBaseName + WizIntToStr(index);
-        QIcon icon = WizLoadSkinIcon(themeName, iconName, size);
+        QIcon icon = WizLoadSkinIconEx(themeName, iconName, size);
         if (icon.isNull())
             return;
         //
@@ -120,7 +122,7 @@ void WizAnimateAction::stopPlay()
 
     m_target->setProperty("animationStatus", 0);
 
-    m_target->setIcon(m_target->icon());
+    m_target->setIcon(m_iconDefault);
     m_timer->stop();
 }
 
