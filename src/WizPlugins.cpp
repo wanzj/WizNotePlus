@@ -275,7 +275,7 @@ WizPluginData::WizPluginData(QString path, QObject* parent)
     m_type = plugin.getString(section, "Type");
     m_guid = plugin.getString(section, "AppGUID");
     m_scriptFileName = m_path + "index.html";
-    m_icon = WizLoadSkinIcon("", m_path + "plugin.svg", QSize(WizSmartScaleUI(14), WizSmartScaleUI(14)), ICON_OPTIONS);
+    m_icon = WizLoadSkinIcon("", m_path + "plugin.svg", QSize(WizSmartScaleUIEx(14), WizSmartScaleUIEx(14)), ICON_OPTIONS);
 }
 //
 void WizPluginData::emitDocumentChanged()
@@ -327,9 +327,10 @@ WizPluginPopupWidget::WizPluginPopupWidget(WizExplorerApp& app, WizPluginData* d
 {
     data->initStrings();
     //
+    WizMainWindow* mw = qobject_cast<WizMainWindow*>(app.mainWindow());
     WizWebEngineViewInjectObjects objects = {
         {"WizPluginData", m_data},
-        {"WizExplorerApp", app.object()}
+        {"WizExplorerApp", mw->componentInterface()}
     };
     m_web = new WizWebEngineView(objects, this);
     //

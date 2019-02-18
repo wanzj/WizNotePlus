@@ -261,16 +261,22 @@ WizTitleBar::WizTitleBar(WizExplorerApp& app, QWidget *parent)
             SLOT(on_commentCountAcquired(QString,int)));
 }
 
+/**
+ * @brief Init plugins' tool button on document tool bar.
+ * 
+ * @param docToolbar 
+ */
 void WizTitleBar::initPlugins(QToolBar* docToolbar)
 {
     int nTitleHeight = Utils::WizStyleHelper::titleEditorHeight();
     m_plugins = WizPlugins::plugins().pluginsByType("document");
     for (auto data : m_plugins) {
         //
-        WizCellButton* button = new WizCellButton(WizCellButton::ImageOnly, this);
+        WizToolButton* button = new WizToolButton(this, WizCellButton::ImageOnly);
         button->setUserObject(data);
         button->setFixedHeight(nTitleHeight);
-        button->setNormalIcon(data->icon(), data->name());
+        button->setIcon(data->icon());
+        button->setToolTip(data->name());
         connect(button, SIGNAL(clicked()), SLOT(onPluginButtonClicked()));
         docToolbar->addWidget(button);
         //
@@ -279,7 +285,7 @@ void WizTitleBar::initPlugins(QToolBar* docToolbar)
 
 void WizTitleBar::onPluginButtonClicked()
 {
-    WizCellButton* button = dynamic_cast<WizCellButton *>(sender());
+    WizToolButton* button = dynamic_cast<WizToolButton *>(sender());
     if (!button) {
         return;
     }

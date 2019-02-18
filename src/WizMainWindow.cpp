@@ -2170,23 +2170,22 @@ void WizMainWindow::initToolBar()
     QAction* newNoteAction = m_actions->actionFromName(WIZACTION_GLOBAL_NEW_DOCUMENT);
     //newNoteAction->setIcon(::WizLoadSkinIcon(this->userSettings().skin(), "toolButtonNewNote"));
     //
-    //QToolButton* buttonNew = new QToolButton(m_toolBar);
     QToolButton* buttonNew = new QToolButton(m_toolBar);
-    //buttonNew->setStyle(new WizNotePlusStyle("fusion"));//暂时注释
-    buttonNew->setMenu(m_newNoteExtraMenu);//选择模板的菜单
+    buttonNew->setStyle(new WizNotePlusStyle("fusion"));
+    buttonNew->setMenu(m_newNoteExtraMenu);
     buttonNew->setDefaultAction(newNoteAction);
     buttonNew->setPopupMode(QToolButton::MenuButtonPopup);
     buttonNew->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    //buttonNew->setAutoRaise(true);
-    //
-    QString strIconPath = ::WizGetSkinResourcePath(userSettings().skin()) + "arrow.png";
-    QString newButtonStyleSheet = QString("QToolButton{border:%1px solid transparent;padding-right:%2px;}"
-                                          "QToolButton::menu-button{border:%1px solid transparent;}"
-                                          "QToolButton::menu-arrow{image: url(%3)}")
-            .arg(WizSmartScaleUI(2))
-            .arg(WizSmartScaleUI(16))
-            .arg(strIconPath);
-    buttonNew->setStyleSheet(newButtonStyleSheet);
+    buttonNew->setAutoRaise(true);
+    // 注意：设置 QSS 将会覆盖 QProxyStyle，所以注释掉以下：
+    // QString strIconPath = ::WizGetSkinResourcePath(userSettings().skin()) + "arrow.png";
+    // QString newButtonStyleSheet = QString("QToolButton{border:%1px solid transparent;padding-right:%2px;}"
+    //                                       "QToolButton::menu-button{border:%1px solid transparent;}"
+    //                                       "QToolButton::menu-arrow{image: url(%3)}")
+    //         .arg(WizSmartScaleUI(2))
+    //         .arg(WizSmartScaleUI(16))
+    //         .arg(strIconPath);
+    // buttonNew->setStyleSheet(newButtonStyleSheet);
     m_toolBar->addWidget(buttonNew);
     //
     m_toolBar->addWidget(new WizSpacer(m_toolBar));
@@ -4310,8 +4309,12 @@ QObject* WizMainWindow::DatabaseManager()
 
 QObject* WizMainWindow::CurrentDocumentBrowserObject()
 {
-    //FIXME: 这里应该返回 IWizHtmlEditorApp 接口
-    return currentDocumentView()->web();
+    WizDocumentView* docView = currentDocumentView();
+    if (docView) {
+        return currentDocumentView()->web();
+    } else {
+        return nullptr;
+    }
 }
 
 WizDatabaseManager* WizMainWindow::DatabaseManagerEx()

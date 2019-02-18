@@ -38,6 +38,11 @@ QObject* IWizExplorerApp::DatabaseManager()
     return m_database;
 }
 
+QObject* IWizExplorerApp::CurrentDocumentBrowserObject()
+{
+    return m_mainWindow->CurrentDocumentBrowserObject();
+}
+
 QObject* IWizExplorerApp::CreateWizObject(const QString& strObjectID)
 {
     return m_mainWindow->CreateWizObject(strObjectID);
