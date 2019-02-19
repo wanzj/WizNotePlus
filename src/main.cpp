@@ -190,8 +190,6 @@ int mainCore(int argc, char *argv[])
 
 #ifdef Q_OS_WIN
     QFont appFont = WizCreateWindowsUIFont(app, WizGetWindowsFontName());
-    appFont.setPixelSize(14); // Windows 端自动缩放UI后缩小字体大小
-    //appFont.setPointSize(12);
     QApplication::setFont(appFont);
 #endif
     // Debug 输出
