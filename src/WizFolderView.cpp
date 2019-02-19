@@ -31,6 +31,11 @@ WizFolderView::WizFolderView(WizExplorerApp& app, QWidget *parent, bool showRead
 #endif
 
     //initFolders();
+    //
+    if (isDarkMode()) {
+        QString darkStyleSheet = QString("background-color:%1").arg(WizColorLineEditorBackground.name());
+        setStyleSheet(darkStyleSheet);
+    }
 }
 
 void WizFolderView::resizeEvent(QResizeEvent* event)
@@ -47,6 +52,7 @@ void WizFolderView::resizeEvent(QResizeEvent* event)
 void WizFolderView::showEvent(QShowEvent *event)
 {
     QTreeWidget::showEvent(event);
+    WizWaitCursor wait;
     clear();
     initFolders();
     initGroups();

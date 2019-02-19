@@ -411,12 +411,16 @@ long wiz_strtoul(const unsigned short* nptr, QChar endchar, int base)
     return ctr.toLong(NULL, base);
 }
 
+/**
+ * @brief This is a deprecated method, please use WizSmartScaleEx instead.
+ * @return
+ */
 int WizSmartScaleUI(int spec)
 {
 #ifdef Q_OS_MAC
     return spec;
 #else
-    /*
+
     static double rate = 0;
 
     if (0 == static_cast<int>(rate))
@@ -459,18 +463,19 @@ int WizSmartScaleUI(int spec)
         else
         {
             // 当程序窗口还没有初始化时，将得不到程序关联屏幕的相关数据，应该在窗口初始化完成后调用本函数。
-            Q_ASSERT(false);
+            //Q_ASSERT(false);
         }
     }
-    //
-    */
-    int rate = 1;
     //
     return int(spec * rate);
     //
 #endif
 }
 
+/**
+ * @brief Scale UI related size according to user's DPI settings.
+ * @return 
+ */
 int WizSmartScaleUIEx(int spec)
 {
     qreal rate = GetDevicePixelRatio();

@@ -30,6 +30,8 @@ public:
     void setCheckedIcon(const QIcon& icon, const QString& strTips);
     void setBadgeIcon(const QIcon& icon, const QString& strTips);
     int state() const { return m_state; }
+    void setUserObject(QObject* obj) { m_userObject = obj; }
+    QObject* userObject() const { return m_userObject; }
 
 public slots:
     void setState(int state);
@@ -39,13 +41,14 @@ protected:
     ButtonType m_buttonType;
     int m_state;
     int m_count;
-    QSize m_iconSize;
     QIcon m_iconNomal;
     QIcon m_iconChecked;
     QIcon m_iconBadge;
+    QSize m_iconSize;
     QString m_strTipsNormal;
     QString m_strTipsChecked;
     QString m_strTipsBagde;
+    QObject* m_userObject;
 
     //QIcon m_backgroundIcon;
 
@@ -60,13 +63,13 @@ class WizRoundCellButton : public WizCellButton
     Q_OBJECT
 public:
     explicit WizRoundCellButton(QWidget* parent = nullptr);
+    ~WizRoundCellButton();
 
     void setNormalIcon(const QIcon& icon, const QString& text, const QString& strTips);
     void setCheckedIcon(const QIcon& icon, const QString& text, const QString& strTips);
     void setBadgeIcon(const QIcon& icon, const QString& text, const QString& strTips);
 
     QString text() const;
-    int iconWidth() const;
     int buttonWidth() const;
 
 public slots:
@@ -109,6 +112,8 @@ public:
     void setCheckedIcon(const QIcon& icon, const QString& strTips);
     void setBadgeIcon(const QIcon& icon, const QString& strTips);
     int state() const { return m_state; }
+    void setUserObject(QObject* obj) { m_userObject = obj; }
+    QObject* userObject() const { return m_userObject; }
 
 public slots:
     void setState(int state);
@@ -126,6 +131,7 @@ protected:
     QString m_strTipsNormal;
     QString m_strTipsChecked;
     QString m_strTipsBadge;
+    QObject* m_userObject;
 
 protected:
     virtual void paintEvent(QPaintEvent* event);

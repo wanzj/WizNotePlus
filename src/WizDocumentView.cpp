@@ -9,6 +9,7 @@
 #include <QWebEngineView>
 #include <QWebEnginePage>
 #include <QWebEngineSettings>
+#include <QSpacerItem>
 
 #include "share/WizGlobal.h"
 
@@ -78,6 +79,13 @@ WizDocumentView::WizDocumentView(WizExplorerApp& app, QWidget* parent)
     m_docView->setLayout(layoutDoc);
     // 创建堆叠部件
     m_tab = new QStackedWidget(this);
+    //
+    if (isDarkMode()) {
+        setAutoFillBackground(true);
+        setStyleSheet("background-color:#272727;");
+        m_tab->setAutoFillBackground(true);
+        m_tab->setStyleSheet("background-color:#272727;");
+    }
     // 设置密码视图
     m_passwordView->setGeometry(this->geometry());
     connect(m_passwordView, SIGNAL(cipherCheckRequest()), SLOT(onCipherCheckRequest()));
@@ -101,15 +109,12 @@ WizDocumentView::WizDocumentView(WizExplorerApp& app, QWidget* parent)
     m_tab->setBackgroundRole(QPalette::HighlightedText);
     // 设置评论部件
     m_comments = m_commentWidget->web();
+    m_comments->setPage(new WizWebEnginePage({{"WizExplorerApp", m_app.object()}}, this));
     //m_comments->history()->setMaximumItemCount(0);
     m_comments->settings()->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
     //m_comments->page()->setScrollBarPolicy(Qt::Horizontal, Qt::ScrollBarAlwaysOff);
     m_comments->setAcceptDrops(false);
     connect(m_comments, SIGNAL(loadFinishedEx(bool)), m_title, SLOT(onCommentPageLoaded(bool)));
-
-    WizMainWindow* mv = WizGlobal::mainWindow();
-    QObject* IWizExplorerApp = qobject_cast<QObject*>(mv->componentInterface());
-    m_comments->addToJavaScriptWindowObject("WizExplorerApp", IWizExplorerApp);
     //
     connect(m_commentWidget, SIGNAL(widgetStatusChanged()), SLOT(on_commentWidget_statusChanged()));
 
@@ -117,20 +122,29 @@ WizDocumentView::WizDocumentView(WizExplorerApp& app, QWidget* parent)
     // 创建编辑器组件
     QWidget* wgtEditor = new QWidget(m_docView);
     // 创建文档页面视图
-    m_web = new WizDocumentWebView(app, wgtEditor);
-    //m_web->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    //使用一个widget包含webview，否则夜间模式下新建编辑，界面容易出现晃动
+    QWidget* webContainer = new QWidget(wgtEditor);
+    webContainer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    m_web = new WizDocumentWebView(app, webContainer);
+    m_web->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    QVBoxLayout* webContainerLayout = new QVBoxLayout(webContainer);
+    webContainerLayout->setMargin(0);
+    webContainerLayout->setSpacing(0);
+    webContainerLayout->addWidget(m_web);
+    //
     m_title->setEditor(m_web);
     // 创建评论文档页面
     QWebEnginePage* commentsPage = m_comments->page();
     connect(commentsPage, SIGNAL(linkClicked(QUrl, QWebEnginePage::NavigationType, bool, WizWebEnginePage*)), m_web, SLOT(onEditorLinkClicked(QUrl, QWebEnginePage::NavigationType, bool, WizWebEnginePage*)));
 
     QVBoxLayout* layoutEditor = new QVBoxLayout(wgtEditor);
+    //
     layoutEditor->setSpacing(0);
     layoutEditor->setContentsMargins(0, 5, 0, 0);
     layoutEditor->addWidget(m_title);
-    layoutEditor->addWidget(m_web);
+    layoutEditor->addWidget(webContainer);
     layoutEditor->setStretchFactor(m_title, 0);
-    layoutEditor->setStretchFactor(m_web, 1);
+    layoutEditor->setStretchFactor(webContainer, 1);
 
     //
     m_splitter = new WizSplitter(this);

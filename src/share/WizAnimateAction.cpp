@@ -4,6 +4,7 @@
 
 #include "WizMisc.h"
 #include "WizSettings.h"
+#include "WizUIBase.h"
 
 #include <QTimer>
 #include <QAction>
@@ -31,18 +32,17 @@ void WizAnimateAction::setToolButton(QToolButton* button)
     m_iconDefault = m_target->icon();
 }
 
-void WizAnimateAction::setSingleIcons(const QString& strIconBaseName)
+void WizAnimateAction::setSingleIcons(const QString& strIconBaseName, QSize size)
 {
+    QString themeName = Utils::WizStyleHelper::themeName();
     int index = 1;
     while (1)
     {
-        CString strFileName = ::WizGetSkinResourceFileName(Utils::WizStyleHelper::themeName(), strIconBaseName + WizIntToStr(index));
-        if (strFileName.isEmpty())
-            return;
-        QIcon icon(strFileName);
+        QString iconName = strIconBaseName + WizIntToStr(index);
+        QIcon icon = WizLoadSkinIconEx(themeName, iconName, size);
         if (icon.isNull())
             return;
-
+        //
         m_icons.push_back(icon);
 
         index++;

@@ -51,16 +51,16 @@ QFont WizCreateWindowsUIFont(const QApplication& a, const QString& strDefaultFon
         f.setFamily(strDefaultFontName);
     }
     //
-    int fontHeight = WizGetWindowsFontHeight();
+    // int fontHeight = WizGetWindowsFontHeight();
 
-    if (fontHeight < 0)
-    {
-        f.setPixelSize(-fontHeight);
-    }
-    else
-    {
-        f.setPointSize(fontHeight);
-    }
+    // if (fontHeight < 0)
+    // {
+    //     f.setPixelSize(-fontHeight);
+    // }
+    // else
+    // {
+    //     f.setPointSize(fontHeight);
+    // }
     //
     return f;
 }

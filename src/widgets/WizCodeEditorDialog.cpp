@@ -31,14 +31,8 @@ WizCodeEditorDialog::WizCodeEditorDialog(WizExplorerApp& app, WizDocumentWebView
     WizWebEngineViewContainerDialog(parent)
   , m_app(app)
   , m_external(external)
-  , m_codeBrowser(new WizWebEngineView(this))
+  , m_codeBrowser(new WizWebEngineView({{"codeEditor", this}, {"external", external->htmlEditorApp()}}, this))
 {
-    m_codeBrowser->addToJavaScriptWindowObject("codeEditor", this);
-    m_codeBrowser->addToJavaScriptWindowObject("external", m_external); //FIXME: Change the interface to minimized version.
-
-    //
-    //setAttribute(Qt::WA_DeleteOnClose);
-    //setWindowFlags(Qt::WindowStaysOnTopHint);          //could cause fullscreen problem on mac when mainwindow was fullscreen
     setWindowState(windowState() & ~Qt::WindowFullScreen);
     resize(650, 550);
     //

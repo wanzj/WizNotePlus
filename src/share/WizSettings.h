@@ -58,7 +58,11 @@ public:
     void setProxyPassword(const QString& val);
     bool getProxyStatus();
     void setProxyStatus(bool val);
-
+    //
+#ifndef Q_OS_MAC
+    bool isDarkMode();
+    void setDarkMode(bool b);
+#endif
 };
 
 
@@ -93,11 +97,13 @@ public:
     // m_strUserId should always 0 if init as this way.
     WizUserSettings(WizDatabase& db);
 
+    static WizUserSettings* currentSettings() { return s_currentSettings; }
 private:
     QString m_strAccountFolderName;
     QString m_strSkinName;
     QString m_strLocale;
     WizDatabase* m_db;
+    static WizUserSettings* s_currentSettings;
 
 public:
     QString get(const QString& key) const;

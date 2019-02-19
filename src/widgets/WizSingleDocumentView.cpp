@@ -55,8 +55,12 @@ WizSingleDocumentViewer::WizSingleDocumentViewer(WizExplorerApp& app, const QStr
     applyWidgetBackground(false);
     // 创建容器部件
     m_containerWgt = new QWidget(this);
-    m_containerWgt->setStyleSheet(".QWidget{background-color:#F5F5F5;}");
-    // 布局设置
+    if (isDarkMode()) {
+        m_containerWgt->setStyleSheet(".QWidget{background-color:#666666;}");
+    } else {
+        m_containerWgt->setStyleSheet(".QWidget{background-color:#F5F5F5;}");
+    }
+
     layout->addStretch(0);
     layout->addWidget(m_containerWgt);
     layout->addStretch(0);
@@ -66,10 +70,18 @@ WizSingleDocumentViewer::WizSingleDocumentViewer(WizExplorerApp& app, const QStr
     m_containerWgt->setLayout(containerLayout);
     // 创建文档视图
     m_docView = new WizDocumentView(app, m_containerWgt);
-    m_docView->setStyleSheet(QString("QLineEdit{border:1px solid #DDDDDD; border-radius:2px;}"
-                                     "QToolButton {border:0px; padding:0px; border-radius:0px;background-color:#F5F5F5;}"));
-    m_docView->titleBar()->setStyleSheet(QString("QLineEdit{padding:0px; padding-left:-2px; padding-bottom:1px; border:0px;background-color:#F5F5F5;}"));
-    //m_docView->web()->setInSeperateWindow(true);
+    if (isDarkMode()) {
+        m_docView->setStyleSheet(QString("QLineEdit{border:1px solid #DDDDDD; border-radius:2px;}"
+                                         "QToolButton {border:0px; padding:0px; border-radius:0px;background-color:#666666;}"));
+        m_docView->titleBar()->setStyleSheet(QString("QLineEdit{padding:0px; padding-left:-2px; padding-bottom:1px; border:0px;background-color:#000000;}"));
+
+    } else {
+        m_docView->setStyleSheet(QString("QLineEdit{border:1px solid #DDDDDD; border-radius:2px;}"
+                                         "QToolButton {border:0px; padding:0px; border-radius:0px;background-color:#F5F5F5;}"));
+        m_docView->titleBar()->setStyleSheet(QString("QLineEdit{padding:0px; padding-left:-2px; padding-bottom:1px; border:0px;background-color:#F5F5F5;}"));
+
+    }
+    //
     if (WizIsHighPixel())
     {
         m_docView->setMaximumWidth(QWIDGETSIZE_MAX);
@@ -89,14 +101,6 @@ WizSingleDocumentViewer::WizSingleDocumentViewer(WizExplorerApp& app, const QStr
     containerLayout->addStretch(0);
     containerLayout->addWidget(m_docView);
     containerLayout->addStretch(0);
-
-//#ifdef Q_OS_MAC
-//    if (systemWidgetBlurAvailable())
-//    {
-//        setAutoFillBackground(false);
-//        enableWidgetBehindBlur(this);
-//    }
-//#endif
 }
 
 WizSingleDocumentViewer::~WizSingleDocumentViewer()
@@ -134,8 +138,6 @@ void WizSingleDocumentViewer::resizeEvent(QResizeEvent* ev)
 void WizSingleDocumentViewer::closeEvent(QCloseEvent *ev)
 {
     m_docView->waitForDone();
-    //
-    m_docView->web()->closeAll();
     //
     QWidget::closeEvent(ev);
 }

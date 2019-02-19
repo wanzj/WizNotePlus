@@ -4,6 +4,7 @@
 #include <QMessageBox>
 #include <QFontDialog>
 #include <QColorDialog>
+#include <QListWidget>
 #include <QTimer>
 
 #include "share/WizGlobal.h"
@@ -19,6 +20,9 @@
 #include "sync/WizApiEntry.h"
 
 #include "widgets/WizExecutingActionDialog.h"
+#ifdef Q_OS_MAC
+#include "mac/WizMacHelper.h"
+#endif
 
 
 WizPreferenceWindow::WizPreferenceWindow(WizExplorerApp& app, QWidget* parent)
@@ -27,9 +31,23 @@ WizPreferenceWindow::WizPreferenceWindow(WizExplorerApp& app, QWidget* parent)
     , m_app(app)
     , m_dbMgr(app.databaseManager())
 {
+    //
+#ifndef Q_OS_MAC
+    if (isDarkMode()) {
+        setStyleSheet("color:#e9e9e9");
+    }
+#endif
+    //
     ui->setupUi(this);
     setWindowIcon(QIcon());
     setWindowTitle(tr("Preference"));
+    //
+#ifdef Q_OS_MAC
+    ui->checkBoxDarkMode->setVisible(false);
+#else
+    ui->checkBoxDarkMode->setChecked(isDarkMode());
+#endif
+
 
     connect(ui->btnClose, SIGNAL(clicked()), SLOT(accept()));
 
@@ -173,7 +191,7 @@ WizPreferenceWindow::WizPreferenceWindow(WizExplorerApp& app, QWidget* parent)
             arg(m_app.userSettings().defaultFontFamily())
             .arg(m_app.userSettings().defaultFontSize());
     ui->editFont->setText(strFont);
-
+    //
     connect(ui->buttonFontSelect, SIGNAL(clicked()), SLOT(onButtonFontSelect_clicked()));
 
     //
@@ -182,12 +200,33 @@ WizPreferenceWindow::WizPreferenceWindow(WizExplorerApp& app, QWidget* parent)
     ui->spinBox_left->setValue(m_app.userSettings().printMarginValue(wizPositionLeft));
     ui->spinBox_right->setValue(m_app.userSettings().printMarginValue(wizPositionRight));
     ui->spinBox_top->setValue(m_app.userSettings().printMarginValue(wizPositionTop));
+    //
+    if (isDarkMode()) {
+        QString darkStyleSheet = QString("background-color:%1").arg(WizColorLineEditorBackground.name());
+        ui->editFont->setStyleSheet(darkStyleSheet);
+        ui->spinBox_bottom->setStyleSheet(darkStyleSheet);
+        ui->spinBox_left->setStyleSheet(darkStyleSheet);
+        ui->spinBox_right->setStyleSheet(darkStyleSheet);
+        ui->spinBox_top->setStyleSheet(darkStyleSheet);
+        //
+    }
+
 
     QString strColor = m_app.userSettings().editorBackgroundColor();
-    updateEditorBackgroundColor(strColor);
+    if (isDarkMode()) {
+        strColor = WizColorLineEditorBackground.name();
+    }
+    updateEditorBackgroundColor(strColor, false);
 
     bool manuallySortFolders = m_app.userSettings().isManualSortingEnabled();
     ui->checkBoxManuallySort->setChecked(manuallySortFolders);
+    //
+#ifdef Q_OS_MAC
+    if (isMojaveOrHigher()) {
+        //
+        ui->checkBoxTrayIcon->setVisible(false);
+    }
+#endif
 }
 
 void WizPreferenceWindow::showPrintMarginPage()
@@ -314,6 +353,36 @@ void WizPreferenceWindow::labelProxy_linkActivated(const QString& link)
     }
 }
 
+void WizApplyDarkModeStyles_Mac(QObject* parent)
+{
+    if (isDarkMode()) {
+        for (QObject* child : parent->children()) {
+
+            if (QWidget* childWidget = dynamic_cast<QWidget*>(child)) {
+                //
+                QString className = child->metaObject()->className();
+                //
+                qDebug() << className << childWidget->geometry();
+                //
+                if (QWidget* widget = dynamic_cast<QLabel*>(child)) {
+                    widget->setStyleSheet("color:#a6a6a6;background-color:#333333");
+                } else if (QWidget* widget = dynamic_cast<QLineEdit*>(child)) {
+                    widget->setStyleSheet("color:#a6a6a6;background-color:#333333");
+#ifndef Q_OS_MAC
+                } else if (QWidget* widget = dynamic_cast<QAbstractButton*>(child)) {
+                    widget->setStyleSheet("color:#a6a6a6");
+#endif
+                } else if (className == "QFontListView") {
+                    childWidget->setStyleSheet("color:#a6a6a6;background-color:#333333");
+                }
+            }
+            //
+            WizApplyDarkModeStyles_Mac(child);
+        }
+    }
+}
+
+
 void WizPreferenceWindow::onButtonFontSelect_clicked()
 {
     if (!m_fontDialog) {
@@ -322,6 +391,10 @@ void WizPreferenceWindow::onButtonFontSelect_clicked()
         // FIXME: Qt bugs here https://bugreports.qt-project.org/browse/QTBUG-27415
         // upgrade Qt library to 5.0 should fix this issue
         m_fontDialog->setOptions(QFontDialog::DontUseNativeDialog);
+        //
+        if (isDarkMode()) {
+            WizApplyDarkModeStyles_Mac(m_fontDialog);
+        }
     }
 
     QString strFont = m_app.userSettings().defaultFontFamily();
@@ -373,6 +446,14 @@ void WizPreferenceWindow::on_checkBoxTrayIcon_toggled(bool checked)
     mainWindow->setSystemTrayIconVisible(checked);
 }
 
+#ifndef Q_OS_MAC
+void WizPreferenceWindow::on_checkBoxDarkMode_clicked(bool checked)
+{
+    WizSettings wizSettings(Utils::WizPathResolve::globalSettingsFile());
+    wizSettings.setDarkMode(checked);
+}
+#endif
+
 void WizPreferenceWindow::on_comboBox_unit_currentIndexChanged(int index)
 {
     m_app.userSettings().setPrintMarginUnit(index);
@@ -414,20 +495,25 @@ void WizPreferenceWindow::on_pushButtonBackgroundColor_clicked()
     if (dlg.exec() == QDialog::Accepted)
     {
         QString strColor = dlg.currentColor().name();
-        updateEditorBackgroundColor(strColor);
+        updateEditorBackgroundColor(strColor, true);
     }
 }
 
 void WizPreferenceWindow::on_pushButtonClearBackground_clicked()
 {
-    updateEditorBackgroundColor("");
+    updateEditorBackgroundColor("", true);
 }
 
-void WizPreferenceWindow::updateEditorBackgroundColor(const QString& strColorName)
+void WizPreferenceWindow::updateEditorBackgroundColor(const QString& strColorName, bool save)
 {
-    m_app.userSettings().setEditorBackgroundColor(strColorName);
+    if (save) {
+        m_app.userSettings().setEditorBackgroundColor(strColorName);
+    }
+    //
     ui->pushButtonBackgroundColor->setStyleSheet(QString("QPushButton "
-                                                             "{ border: 1px; background: %1; height:20px;} ").arg(strColorName));
+                                                             "{ border: 1px; background: %1; height:%2px;} ")
+                                                 .arg(strColorName)
+                                                 .arg(WizSmartScaleUI(20)));
     ui->pushButtonBackgroundColor->setText(strColorName.isEmpty() ? tr("Click to select color") : QString());
     ui->pushButtonClearBackground->setVisible(!strColorName.isEmpty());
 

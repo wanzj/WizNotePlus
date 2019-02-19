@@ -15,7 +15,8 @@
 #include <QThread>
 #include <QFileIconProvider>
 #include <QSettings>
-
+#include <QSvgRenderer>
+#include <QDomDocument>
 #include <QtCore>
 #include <QNetworkConfigurationManager>
 #include <QNetworkAccessManager>
@@ -30,6 +31,7 @@
 #include "share/WizAnalyzer.h"
 #include "share/WizObjectOperator.h"
 #include "share/WizEventLoop.h"
+#include "share/WizUIBase.h"
 #include "WizDatabaseManager.h"
 #include "WizObjectDataDownloader.h"
 #include "WizProgressDialog.h"
@@ -1682,6 +1684,13 @@ QString WizGetSystemCustomSkinPath(const QString& strSkinName)
 
 QString WizGetSkinResourceFileName(const QString& strSkinName, const QString& strName)
 {
+    if (strSkinName.isEmpty()) {
+        if (strName.indexOf("/") != -1)
+            return strName;
+        if (strName.indexOf("\\") != -1)
+            return strName;
+    }
+    //
     QString arrayPath[] =
     {
         WizGetSystemCustomSkinPath(strSkinName),
@@ -1689,29 +1698,249 @@ QString WizGetSkinResourceFileName(const QString& strSkinName, const QString& st
     };
 
     QStringList suffixList;
-    suffixList << ".png" << ".tiff" << ".gif";
 
+    QString ext = Utils::WizMisc::extractFileExt(strName);
+    if (ext.isEmpty()) {
+        suffixList << ".svg" << ".png";
+    } else {
+        suffixList << "";
+    }
+    //
     for (size_t i = 0; i < sizeof(arrayPath) / sizeof(QString); i++)
     {
         QStringList::const_iterator it;
         for (it = suffixList.begin(); it != suffixList.end(); it++) {
             QString strFileName = arrayPath[i] + strName + *it;
-            //qDebug() << strFileName;
             if (::WizPathFileExists(strFileName)) {
                 return strFileName;
             }
         }
     }
 
+#ifdef QT_DEBUG
+     qDebug() << strName;
+#endif
     return QString();
 }
 
-QIcon WizLoadSkinIcon(const QString& strSkinName, const QString& strIconName,
-                      QIcon::Mode mode /* = QIcon::Normal */, QIcon::State state /* = QIcon::Off */)
+
+void SetDomAttrRecur(QDomElement &elem, QString strtagname, QString strattr, QString strattrval)
 {
-    return WizLoadSkinIcon(strSkinName, strIconName, QSize(), mode, state);
+    // if it has the tagname then overwritte desired attribute
+    if (elem.tagName().compare(strtagname) == 0)
+    {
+        elem.setAttribute(strattr, strattrval);
+    }
+    // loop all children
+    for (int i = 0; i < elem.childNodes().count(); i++)
+    {
+        if (!elem.childNodes().at(i).isElement())
+        {
+            continue;
+        }
+        //
+        QDomElement childElem = elem.childNodes().at(i).toElement();
+        SetDomAttrRecur(childElem, strtagname, strattr, strattrval);
+    }
 }
 
+QPixmap svg2Pixmap(const QByteArray& svgContent,
+   const QSize& size,
+   QColor color = Qt::transparent,
+   QPainter::CompositionMode mode = QPainter::CompositionMode_SourceOver)
+{
+    QDomDocument doc;
+    doc.setContent(svgContent);
+    //
+    QDomElement root = doc.documentElement();
+    if (color != Qt::transparent) {
+        SetDomAttrRecur(root, "path", "fill", color.name());
+        SetDomAttrRecur(root, "polygon", "fill", color.name());
+    }
+    //
+    QSvgRenderer rr(doc.toByteArray());
+    QImage image(size.width(), size.height(), QImage::Format_ARGB32);
+    QPainter painter(&image);
+    painter.setCompositionMode(mode);
+    image.fill(Qt::transparent);
+    rr.render(&painter);
+    return QPixmap::fromImage(image);
+}
+
+
+void svgAddToIcon(QIcon& icon, const QByteArray& svgContent, const QSize& size, QColor color, QIcon::Mode mode)
+{
+    QPixmap p1 = svg2Pixmap(svgContent, size, color);
+    icon.addPixmap(p1, mode);
+    //
+#ifdef Q_OS_MAC
+    QSize sizeScaled = QSize(size.width() * 2, size.height() * 2);
+    QPixmap p2 = svg2Pixmap(svgContent, sizeScaled, color);
+    p2.setDevicePixelRatio(2);
+    icon.addPixmap(p2, mode);
+#else
+//    static int rate = 0;
+//    if (!rate) {
+//        //
+//        rate = WizSmartScaleUI(100);
+//    }
+//    //
+//    QSize sizeScaled = QSize(WizSmartScaleUI(size.width()), WizSmartScaleUI(size.height()));
+//    QPixmap p2 = svg2Pixmap(svgContent, sizeScaled, Qt::transparent);
+//    p2.setDevicePixelRatio(rate / 100.0);
+//    icon.addPixmap(p2, mode);
+#endif
+}
+
+QIcon svg2Icon(const QByteArray& svgContent, const QSize& size, const WizIconOptions& options)
+{
+    QIcon icon;
+    if (isDarkMode()) {
+        //
+        svgAddToIcon(icon, svgContent, size, options.darkColor, QIcon::Normal);
+        if (options.darkSelectedColor != Qt::transparent) {
+            svgAddToIcon(icon, svgContent, size, options.darkSelectedColor, QIcon::Selected);
+            svgAddToIcon(icon, svgContent, size, options.darkSelectedColor, QIcon::Active);
+        }
+    } else {
+        svgAddToIcon(icon, svgContent, size, Qt::transparent, QIcon::Normal);
+        if (options.selectedColor != Qt::transparent) {
+            svgAddToIcon(icon, svgContent, size, options.selectedColor, QIcon::Selected);
+            svgAddToIcon(icon, svgContent, size, options.selectedColor, QIcon::Active);
+        }
+    }
+    return icon;
+}
+
+QIcon svg2Icon(QString svgFile, const QSize& size, const WizIconOptions& options) {
+
+    QFile file(svgFile);
+    file.open(QFile::ReadOnly);
+    QByteArray bytes = file.readAll();
+    return svg2Icon(bytes, size, options);
+}
+
+void addPngToIcon(QIcon& icon, const QString& fileName, QColor color, QIcon::Mode mode)
+{
+    QPixmap pixmap(fileName);
+    if (!pixmap.isNull()) {
+        if (color != Qt::transparent) {
+            pixmap = qpixmapWithTintColor(pixmap, color);
+        }
+        icon.addPixmap(pixmap, mode);
+    }
+    //
+    QString x2FileName = Utils::WizMisc::extractFilePath(fileName) +
+            Utils::WizMisc::extractFileTitle(fileName) + "@2x" + Utils::WizMisc::extractFileExt(fileName);
+    //
+    QPixmap x2Pixmap(x2FileName);
+    if (!x2Pixmap.isNull()) {
+        if (color != Qt::transparent) {
+            x2Pixmap = qpixmapWithTintColor(x2Pixmap, color);
+        }
+        icon.addPixmap(x2Pixmap, mode);
+    }
+}
+
+void WizScaleIconToSize(QIcon& icon, QSize size)
+{
+    QIcon::Mode states[] = {QIcon::Normal, QIcon::Selected, QIcon::Active};
+    //
+    for (auto mode : states) {
+        //
+        QPixmap pixmap = icon.pixmap(size, mode);
+        if (pixmap.size() != size) {
+            //
+            if (pixmap.size().width() < size.width()) {
+                auto sizes = icon.availableSizes();
+                for (auto s : sizes) {
+                    if (s.width() >= size.width()) {
+                        pixmap = icon.pixmap(s);
+                        break;
+                    }
+                }
+            }
+            //
+            pixmap = pixmap.scaled(size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            icon.addPixmap(pixmap, mode);
+        }
+    }
+}
+
+QIcon WizLoadPngSkinIcon(const QString& fileName, const QSize& iconSize, const WizIconOptions& options)
+{
+    QIcon icon;
+    if (isDarkMode()) {
+        //
+        addPngToIcon(icon, fileName, options.darkColor, QIcon::Normal);
+        //
+        if (options.darkSelectedColor != Qt::transparent) {
+            addPngToIcon(icon, fileName, options.darkSelectedColor, QIcon::Selected);
+            addPngToIcon(icon, fileName, options.darkSelectedColor, QIcon::Active);
+        }
+    } else {
+        addPngToIcon(icon, fileName, Qt::transparent, QIcon::Normal);
+        if (options.selectedColor != Qt::transparent) {
+            addPngToIcon(icon, fileName, options.selectedColor, QIcon::Selected);
+            addPngToIcon(icon, fileName, options.selectedColor, QIcon::Active);
+        }
+    }
+    //
+#ifndef Q_OS_MAC
+    QString path = Utils::WizMisc::extractFilePath(fileName);
+    QString name = Utils::WizMisc::extractFileTitle(fileName);
+    QString x2FileName = path + name + "@2x.png";
+    if (!QFile::exists(x2FileName))
+        return icon;
+    //
+    if (isDarkMode()) {
+        //
+        addPngToIcon(icon, x2FileName, options.darkColor, QIcon::Normal);
+        //
+        if (options.darkSelectedColor != Qt::transparent) {
+            addPngToIcon(icon, x2FileName, options.darkSelectedColor, QIcon::Selected);
+            addPngToIcon(icon, x2FileName, options.darkSelectedColor, QIcon::Active);
+        }
+    } else {
+        addPngToIcon(icon, x2FileName, Qt::transparent, QIcon::Normal);
+        if (options.selectedColor != Qt::transparent) {
+            addPngToIcon(icon, x2FileName, options.selectedColor, QIcon::Selected);
+            addPngToIcon(icon, x2FileName, options.selectedColor, QIcon::Active);
+        }
+    }
+    //
+    if (!iconSize.isEmpty()) {
+        //
+        WizScaleIconToSize(icon, iconSize);
+    }
+#endif
+    //
+    //
+    return icon;
+}
+
+QIcon WizLoadSkinIcon(const QString& strSkinName, const QString& strIconName, const QSize& iconSize, const WizIconOptions& options)
+{
+    QSize size = iconSize;
+    if (size.isEmpty() || size.isNull() || !size.isValid()) {
+        size = QSize(WizSmartScaleUIEx(16), WizSmartScaleUIEx(16));
+    }
+    //
+    QString fileName = WizGetSkinResourceFileName(strSkinName, strIconName);
+    if (fileName.isEmpty() || !QFile::exists(fileName)) {
+        return QIcon();
+    }
+
+    if (Utils::WizMisc::extractFileExt(fileName) == ".png") {
+        return WizLoadPngSkinIcon(fileName, iconSize, options);
+    }
+    //
+    QIcon icon = svg2Icon(fileName, size, options);
+    //
+    return icon;
+}
+
+/** Re-add it for backward compatibility. */
 QPixmap WizLoadPixmapIcon(const QString& strSkinName, const QString& strIconName, const QSize& iconSize)
 {
     static int rate = 0;
@@ -1742,7 +1971,15 @@ QPixmap WizLoadPixmapIcon(const QString& strSkinName, const QString& strIconName
 
 }
 
-QIcon WizLoadSkinIcon(const QString& strSkinName, const QString& strIconName, const QSize& iconSize,
+/** This is the old version of WizLoadSkinIcon, re-add it for backward compatibility. */
+QIcon WizLoadSkinIconEx(const QString& strSkinName, const QString& strIconName,
+                      QIcon::Mode mode /* = QIcon::Normal */, QIcon::State state /* = QIcon::Off */)
+{
+    return WizLoadSkinIconEx(strSkinName, strIconName, QSize(), mode, state);
+}
+
+/** This is the old version of WizLoadSkinIcon, re-add it for backward compatibility. */
+QIcon WizLoadSkinIconEx(const QString& strSkinName, const QString& strIconName, const QSize& iconSize,
                       QIcon::Mode mode /* = QIcon::Normal */, QIcon::State state /* = QIcon::Off */)
 {
     Q_UNUSED(mode);
@@ -1809,138 +2046,6 @@ QIcon WizLoadSkinIcon(const QString& strSkinName, const QString& strIconName, co
 #endif
 }
 
-QIcon WizLoadSkinIcon(const QString& strSkinName, QColor forceground, const QString& strIconName)
-{
-    Q_UNUSED(forceground);
-
-    QString strFileName = WizGetSkinResourceFileName(strSkinName, strIconName);
-    if (strFileName.isEmpty())
-        return QIcon();
-
-    QPixmap pixmap(strFileName);
-
-    QIcon icon;
-    icon.addPixmap(pixmap);
-
-    return icon;
-}
-
-QIcon WizLoadSkinIcon2(const QString& strSkinName, const QColor& blendColor, const QString& strIconName)
-{
-    QString strFileName = WizGetSkinResourceFileName(strSkinName, strIconName);
-    if (!strFileName.isEmpty() && !QFile::exists(strFileName)) {
-        return QIcon();
-    }
-
-    QImage imgOrig(strFileName);
-
-    float factor_R = 0.6f;
-    float factor_G = 0.7f;
-    float factor_B = 1.0f;
-    QRgb blendColorBase = qRgb(blendColor.red() * factor_R, blendColor.green() * factor_G, blendColor.blue() * factor_B);
-
-    for (int i = 0; i < imgOrig.height(); i++) {
-        for (int j = 0; j < imgOrig.width(); j++) {
-            QRgb colorOld = imgOrig.pixel(i, j);
-            int alpha  = qAlpha(colorOld);
-
-            // alpha channel blending
-            int red = qRed(blendColorBase) * (255 - alpha) / 255;
-            int green = qGreen(blendColorBase) * (255 - alpha) / 255;
-            int blue = qBlue(blendColorBase) * (255 - alpha) / 255;
-
-            // optimize, shallow color deepth
-            if (alpha <= 192) {
-                imgOrig.setPixel(i, j, qRgba(red, green, blue, alpha));
-            } else if (alpha > 192) {
-                imgOrig.setPixel(i, j, qRgba(red, green, blue, alpha - 128));
-            }
-        }
-    }
-
-
-    // Test
-    QIcon icon;
-    QPixmap pixmap;
-    pixmap.convertFromImage(imgOrig);
-    icon.addPixmap(pixmap);
-    return icon;
-}
-
-bool WizImageBlending(QImage& img, const QColor& blendColor, QIcon::Mode mode /* = QIcon::Normal */)
-{
-    // FIXME: hard-coded
-    float factor_R = 0.6f;
-    float factor_G = 0.7f;
-    float factor_B = 1.0f;
-
-    QRgb blendColorBase = qRgb(blendColor.red() * factor_R, blendColor.green() * factor_G, blendColor.blue() * factor_B);
-
-    for (int i = 0; i < img.height(); i++) {
-        for (int j = 0; j < img.width(); j++) {
-            QRgb colorOld = img.pixel(i, j);
-            int alpha  = qAlpha(colorOld);
-
-            // alpha channel blending
-            int red = qRed(blendColorBase) * (255 - alpha) / 255;
-            int green = qGreen(blendColorBase) * (255 - alpha) / 255;
-            int blue = qBlue(blendColorBase) * (255 - alpha) / 255;
-
-            // optimize, shallow color deepth
-            if (mode == QIcon::Selected) {
-                img.setPixel(i, j, qRgba(255, 255, 255, alpha));
-            } else {
-                if (alpha <= 192) {
-                    img.setPixel(i, j, qRgba(red, green, blue, alpha));
-                } else if (alpha > 192) {
-                    img.setPixel(i, j, qRgba(red, green, blue, alpha - 128));
-                }
-            }
-        }
-    }
-
-    return true;
-}
-
-void WizLoadSkinIcon3(QIcon& icon, const QString& strSkinName, const QString& strIconName,
-                      QIcon::Mode mode, QIcon::State state, const QColor& blendColor)
-{
-    QString strFileName = WizGetSkinResourceFileName(strSkinName, strIconName);
-    if (!strFileName.isEmpty() && !QFile::exists(strFileName)) {
-        TOLOG("WizLoadSkinIcon: missing icon file");
-        return;
-    }
-
-    QImage img(strFileName);
-    if (!WizImageBlending(img, blendColor, mode)) {
-        TOLOG("WizLoadSkinIcon: icon file is not spec respect for alpha blending");
-        return;
-    }
-
-    icon.addPixmap(QPixmap::fromImage(img), mode, state);
-}
-
-QIcon WizLoadSkinIcon3(const QString& strIconName, QIcon::Mode mode)
-{
-    QString strFileName = WizGetSkinResourceFileName("default", strIconName);
-    if (!strFileName.isEmpty() && !QFile::exists(strFileName)) {
-        TOLOG("WizLoadSkinIcon3: missing icon file: " + strFileName);
-        return QIcon();
-    }
-
-    QImage img(strFileName);
-    if (!WizImageBlending(img, QColor(205, 210, 215), mode)) {
-        TOLOG("WizLoadSkinIcon3: icon file is not spec respect for alpha blending");
-        return QIcon();
-    }
-
-    QIcon icon;
-    icon.addPixmap(QPixmap::fromImage(img), mode, QIcon::On);
-
-    return icon;
-}
-
-
 // FIXME: obosolete, use CWizHtmlToPlainText class instead!
 void WizHtml2Text(const QString& strHtml, QString& strText)
 {
@@ -1951,9 +2056,6 @@ void WizHtml2Text(const QString& strHtml, QString& strText)
     strText.replace(ch, QChar(' '));
     return;
 }
-
-
-
 
 inline bool WizConvertTextToHTML_ForPaste_ProcessSpaceBeginEnd(int nBegin, QString& strLine, const QString& strTab)
 {
@@ -2362,13 +2464,28 @@ void WizShowWebDialogWithToken(const QString& windowTitle, const QString& url, Q
     strFuncName = "Dialog"+strFuncName.replace(" ", "");
     WizFunctionDurationLogger logger(strFuncName);
 
-    WizWebSettingsWithTokenDialog pDlg(url, sz, parent);
+    WizWebSettingsWithTokenDialog* pDlg = new WizWebSettingsWithTokenDialog(url, sz, parent);
     if (dialogResizable)
     {
-        pDlg.setMaximumSize(QSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX));
+        pDlg->setMaximumSize(QSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX));
     }
-    pDlg.setWindowTitle(windowTitle);
-    pDlg.exec();
+    pDlg->setWindowTitle(windowTitle);
+    pDlg->exec();
+    //
+    pDlg->deleteLater();
+}
+
+void WizShowWebDialogWithTokenDelayed(const QString& windowTitle, const QString& url, QWidget* parent, const QSize& sz, bool dialogResizable)
+{
+    QString strFuncName = windowTitle;
+    strFuncName = "Dialog"+strFuncName.replace(" ", "");
+    WizFunctionDurationLogger logger(strFuncName);
+
+    WizWebSettingsWithTokenDialog* pDlg = WizWebSettingsWithTokenDialog::delayShow(windowTitle, url, sz, parent);
+    if (dialogResizable)
+    {
+        pDlg->setMaximumSize(QSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX));
+    }
 }
 
 
@@ -2594,16 +2711,6 @@ double calScaleFactor()
     return scaleFactor;
 }
 
-void WizScaleIconSizeForRetina(QSize& size)
-{
-    if (qApp->devicePixelRatio() >= 2)
-    {
-        size.scale(size.width() / 2, size.height() / 2, Qt::IgnoreAspectRatio);
-    }
-}
-
-
-
 bool WizIsHighPixel()
 {
 #ifdef Q_OS_MAC
@@ -2710,7 +2817,7 @@ bool WizCreateThumbnailForAttachment(QImage& img, const QString& attachFileName,
 
     int dateWidth = fm.width(dateInfo);
     infoRect.adjust(dateWidth + 4, 0, 0, 0);
-    QPixmap pixGreyPoint(Utils::WizStyleHelper::skinResourceFileName("document_grey_point", true));
+    QPixmap pixGreyPoint(Utils::WizStyleHelper::loadPixmap("document_grey_point"));
     QRect rcPix = infoRect.adjusted(0, 6, 0, 0);
     rcPix.setSize(QSize(4, 4));
     p.drawPixmap(rcPix, pixGreyPoint);
