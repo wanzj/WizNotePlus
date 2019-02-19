@@ -1,4 +1,5 @@
 ﻿#include <QWebEngineView>
+#include <QWebEngineSettings>
 #include <QWebSocketServer>
 #include <QWebChannel>
 #include <QDesktopWidget>
@@ -134,6 +135,11 @@ WizWebEnginePage::WizWebEnginePage(const WizWebEngineViewInjectObjects& objects,
     : QWebEnginePage(createWebEngineProfile(objects, parent), parent)
     , m_continueNavigate(true)
 {
+    QWebEngineSettings* st = settings();
+    st->setAttribute(QWebEngineSettings::FocusOnNavigationEnabled, true);
+    st->setAttribute(QWebEngineSettings::AllowWindowActivationFromJavaScript, true);
+    st->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
+    //
     if (!objects.empty()) {
 
         QWebChannel* channel = new QWebChannel();

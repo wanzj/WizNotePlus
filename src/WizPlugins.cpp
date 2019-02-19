@@ -12,6 +12,7 @@
 #include <QApplication>
 #include <QNetworkReply>
 #include <QWebEngineView>
+#include <QWebEngineSettings>
 #include "share/WizSettings.h"
 #include "share/WizWebEngineView.h"
 #include "share/WizMisc.h"
@@ -372,6 +373,7 @@ void WizPlugins::init(QString basePath)
     //
     for (auto folder : folders) {
         WizPluginData* data = new WizPluginData(folder, nullptr);
+        qDebug() << data->name();
         if (data->scriptFileName().isEmpty()) {
             delete data;
             continue;
