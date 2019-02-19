@@ -7,6 +7,7 @@
 
 #include <QMovie>
 #include <QVBoxLayout>
+#include <QStyleFactory>
 #include <QLabel>
 #include <QPushButton>
 #include <QApplication>
@@ -335,6 +336,7 @@ WizPluginPopupWidget::WizPluginPopupWidget(WizExplorerApp& app, WizPluginData* d
     };
     m_web = new WizWebEngineView(objects, this);
     //
+    setContentsMargins(0, 0, 0, 0);
     QVBoxLayout* layout = new QVBoxLayout();
     layout->setContentsMargins(0, 0, 0, 0);
     setLayout(layout);

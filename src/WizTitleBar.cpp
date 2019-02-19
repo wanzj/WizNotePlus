@@ -305,8 +305,8 @@ void WizTitleBar::onPluginButtonClicked()
         widget = it->second;
     }
     //
-    QPoint pt = mapToGlobal(button->geometry().center());
-    pt.setY(pt.y() + button->rect().height() / 2);
+    QRect rc = button->rect();
+    QPoint pt = button->mapToGlobal(QPoint(rc.width()/2, rc.height()));
     data->emitShowEvent();
     if (isDarkMode()) {
         widget->web()->setVisible(false);
