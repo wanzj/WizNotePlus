@@ -276,8 +276,26 @@ WizPluginData::WizPluginData(QString path, QObject* parent)
     m_name = plugin.getString(section, "AppName");
     m_type = plugin.getString(section, "Type");
     m_guid = plugin.getString(section, "AppGUID");
-    m_scriptFileName = m_path + "index.html";
-    m_icon = WizLoadSkinIcon("", m_path + "plugin.svg", QSize(WizSmartScaleUIEx(14), WizSmartScaleUIEx(14)), ICON_OPTIONS);
+    m_pluginCount = plugin.getInt(section, "PluginCount");
+    //m_scriptFileName = m_path + "index.html";
+    //m_icon = WizLoadSkinIcon("", m_path + "plugin.svg", QSize(WizSmartScaleUIEx(14), WizSmartScaleUIEx(14)), ICON_OPTIONS);
+    //
+    int realPluginCount = 0;
+    QStringList groups = plugin.childGroups();
+    for (QString& pluginIndex : groups) {
+        if (!pluginIndex.contains("Plugin_"))
+            continue;
+        plugin.beginGroup(pluginIndex);
+        //
+        WizChildPluginData* data = new WizChildPluginData(pluginIndex, plugin, this);
+        //
+        m_childPlugins.push_back(data);
+        realPluginCount++;
+        //
+        plugin.endGroup();
+    }
+    if (realPluginCount != m_pluginCount)
+        qWarning() << QString("App %s's PluginCount not correct!").arg(m_name);
 }
 //
 void WizPluginData::emitDocumentChanged()
@@ -322,6 +340,21 @@ void WizPluginData::initStrings()
     m_strings = strings;
 }
 
+WizChildPluginData::WizChildPluginData(QString& section, WizSettings& setting, QObject* parent)
+    : m_section(section)
+{
+    m_caption = setting.getString(section, "Caption");
+    m_guid = setting.getString(section, "GUID");
+    m_type = setting.getString(section, "Type");
+    m_buttonType = setting.getString(section, "ButtonType");
+    m_menuType = setting.getString(section, "MenuType");
+    m_iconFileName = setting.getString(section, "IconFileName");
+    m_htmlFileName = setting.getString(section, "HtmlFileName");
+    m_scriptFileName = setting.getString(section, "ScriptFileName");
+    m_dialogWidth = setting.getString(section, "DialogWidth");
+    m_dialogHeight = setting.getString(section, "DialogHeight");
+}
+
 
 WizPluginPopupWidget::WizPluginPopupWidget(WizExplorerApp& app, WizPluginData* data, QWidget* parent)
     : WizPopupWidget(parent)
@@ -336,7 +369,7 @@ WizPluginPopupWidget::WizPluginPopupWidget(WizExplorerApp& app, WizPluginData* d
     };
     m_web = new WizWebEngineView(objects, this);
     //
-    setContentsMargins(0, 0, 0, 0);
+    setContentsMargins(0, 8, 0, 0);
     QVBoxLayout* layout = new QVBoxLayout();
     layout->setContentsMargins(0, 0, 0, 0);
     setLayout(layout);
@@ -360,6 +393,14 @@ WizPlugins::WizPlugins(QString basePath)
     init(basePath);
 };
 
+WizPlugins::WizPlugins(QStringList basePath)
+{
+    QStringListIterator paths(basePath);
+    while (paths.hasNext())
+         init(paths.next());
+};
+
+
 WizPlugins::~WizPlugins()
 {
     for (auto data : m_data) {
@@ -376,10 +417,10 @@ void WizPlugins::init(QString basePath)
     for (auto folder : folders) {
         WizPluginData* data = new WizPluginData(folder, nullptr);
         qDebug() << data->name();
-        if (data->scriptFileName().isEmpty()) {
-            delete data;
-            continue;
-        }
+        // if (data->scriptFileName().isEmpty()) {
+        //     delete data;
+        //     continue;
+        // }
         //
         m_data.push_back(data);
     }
@@ -404,9 +445,23 @@ std::vector<WizPluginData*> WizPlugins::pluginsByType(QString type) const
     return ret;
 }
 
+std::vector<WizChildPluginData*> WizPlugins::pluginsByButtonType(QString buttonType) const
+{
+    WizPlugins& plugins = WizPlugins::plugins();
+    std::vector<WizChildPluginData*> ret;
+    for (WizPluginData* data : plugins.m_data) {
+        for (WizChildPluginData* child : data->childPlugins()) {
+            if (child->buttonType() == buttonType) {
+                ret.push_back(child);
+            }
+        }
+    }
+    return ret;
+}
+
 WizPlugins& WizPlugins::plugins()
 {
-    QString pluginBase = Utils::WizPathResolve::pluginsPath();
+    QStringList pluginBase = Utils::WizPathResolve::pluginsAllPath();
     static WizPlugins plugins(pluginBase);
     return plugins;
 }

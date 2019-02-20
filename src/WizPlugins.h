@@ -29,6 +29,7 @@ public:
     QString type() const { return m_type; }
     QString name() const { return m_name; }
     QString strings() const { return m_strings; }
+    std::vector<WizChildPluginData*> childPlugins() { return m_childPlugins; }
     void initStrings();
     void emitDocumentChanged();
     void emitShowEvent();
@@ -43,8 +44,45 @@ private:
     QIcon m_icon;
     QString m_name;
     QString m_strings;
+    int m_pluginCount;
+    std::vector<WizChildPluginData*> m_childPlugins;
     //
     friend class WizPluginPopupWidget;
+    friend class WizChildPluginData;
+};
+
+class WizChildPluginData : public QObject
+{
+    Q_OBJECT
+
+public:
+    WizChildPluginData(QString& section, WizSettings& setting, QObject* parent);
+
+public:
+    QString section() { return m_section; }
+    QString caption() { return m_caption; }
+    QString guid() { return m_guid; }
+    QString type() { return m_type; }
+    QString buttonType() { return m_buttonType; }
+    QString menuType() { return m_menuType; }
+    QString iconFileName() { return m_iconFileName; }
+    QString htmlFileName() { return m_htmlFileName; }
+    QString scriptFileName() { return m_scriptFileName; }
+    QString dialogWidth() { return m_dialogWidth; }
+    QString dialogHeight() { return m_dialogHeight; }
+
+private:
+    QString m_section;
+    QString m_caption;
+    QString m_guid;
+    QString m_type;
+    QString m_buttonType;
+    QString m_menuType;
+    QString m_iconFileName;
+    QString m_htmlFileName;
+    QString m_scriptFileName;
+    QString m_dialogWidth;
+    QString m_dialogHeight;
 };
 
 class WizPluginPopupWidget : public WizPopupWidget
@@ -65,6 +103,7 @@ class WizPlugins
 {
 private:
     WizPlugins(QString basePath);
+    WizPlugins(QStringList basePath);
 public:
     ~WizPlugins();
 private:
@@ -73,6 +112,7 @@ private:
     std::vector<WizPluginData*> m_data;
 public:
     std::vector<WizPluginData*> pluginsByType(QString type) const;
+    std::vector<WizChildPluginData*> pluginsByButtonType(QString buttonType) const;
     std::vector<WizPluginData*> pluginsAll() const { return m_data; }
     void notifyDocumentChanged();
 public:
