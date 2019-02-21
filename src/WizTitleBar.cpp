@@ -1,5 +1,7 @@
 ﻿#include "WizTitleBar.h"
 
+#include <QApplication>
+#include <QDesktopWidget>
 #include <QVBoxLayout>
 #include <QUrl>
 #include <QMenu>
@@ -270,7 +272,7 @@ void WizTitleBar::initPlugins(QToolBar* docToolbar)
 {
     int nTitleHeight = Utils::WizStyleHelper::titleEditorHeight();
     m_plugins = WizPlugins::plugins().modulesByButtonType("Document");
-    for (auto data : m_plugins) {
+    for (WizPluginModuleData* data : m_plugins) {
         //
         WizToolButton* button = new WizToolButton(this, WizCellButton::ImageOnly);
         button->setUserObject(data);
@@ -278,13 +280,20 @@ void WizTitleBar::initPlugins(QToolBar* docToolbar)
         button->setIcon(WizLoadSkinIcon("", data->iconFileName(), 
             QSize(TITLE_BUTTON_ICON_SIZE, TITLE_BUTTON_ICON_SIZE), ICON_OPTIONS));
         button->setToolTip(data->caption());
-        connect(button, SIGNAL(clicked()), SLOT(onPluginButtonClicked()));
+        //
+        QString moduleType = data->type();
+        if ( moduleType == "PopupDialog" ) {
+            connect(button, SIGNAL(clicked()), SLOT(handlePluginPopupDialogShow()));
+        } else if ( moduleType == "HtmlDialog" ) {
+            connect(button, SIGNAL(clicked()), SLOT(handlePluginHtmlDialogShow()));
+        }
+        //
         docToolbar->addWidget(button);
         //
     }
 }
 
-void WizTitleBar::onPluginButtonClicked()
+void WizTitleBar::handlePluginPopupDialogShow()
 {
     WizToolButton* button = dynamic_cast<WizToolButton *>(sender());
     if (!button) {
@@ -297,11 +306,11 @@ void WizTitleBar::onPluginButtonClicked()
     }
     //
     QString guid = data->guid();
-    auto it = m_pluginWidget.find(guid);
-    WizPluginPopupWidget* widget;
-    if (it == m_pluginWidget.end()) {
-        widget = new WizPluginPopupWidget(m_app, data, this);
-        m_pluginWidget.insert(std::make_pair(guid, widget));
+    auto it = m_pluginPopupDialog.find(guid);
+    WizPluginPopupDialog* widget;
+    if (it == m_pluginPopupDialog.end()) {
+        widget = new WizPluginPopupDialog(m_app, data, this);
+        m_pluginPopupDialog.insert(std::make_pair(guid, widget));
     } else {
         widget = it->second;
     }
@@ -316,6 +325,41 @@ void WizTitleBar::onPluginButtonClicked()
         });
     }
     widget->showAtPoint(pt);
+}
+
+void WizTitleBar::handlePluginHtmlDialogShow()
+{
+    WizToolButton* button = dynamic_cast<WizToolButton *>(sender());
+    if (!button) {
+        return;
+    }
+    //
+    WizPluginModuleData* data = dynamic_cast<WizPluginModuleData *>(button->userObject());
+    if (!data) {
+        return;
+    }
+    //
+    QString guid = data->guid();
+    auto it = m_pluginHtmlDialog.find(guid);
+    WizPluginHtmlDialog* widget;
+    if (it == m_pluginHtmlDialog.end()) {
+        widget = new WizPluginHtmlDialog(m_app, data, this);
+        m_pluginHtmlDialog.insert(std::make_pair(guid, widget));
+    } else {
+        widget = it->second;
+    }
+    //
+    data->emitShowEvent();
+    widget->setGeometry(
+        QStyle::alignedRect(
+            Qt::LeftToRight,
+            Qt::AlignCenter,
+            widget->dialogSize(),
+            qApp->desktop()->availableGeometry()
+        )
+    );
+    widget->show();
+    widget->raise();
 }
 
 /**

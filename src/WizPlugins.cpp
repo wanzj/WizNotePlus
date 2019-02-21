@@ -370,7 +370,7 @@ void WizPluginModuleData::emitShowEvent()
 }
 
 
-WizPluginPopupWidget::WizPluginPopupWidget(WizExplorerApp& app, WizPluginModuleData* data, QWidget* parent)
+WizPluginPopupDialog::WizPluginPopupDialog(WizExplorerApp& app, WizPluginModuleData* data, QWidget* parent)
     : WizPopupWidget(parent)
     , m_data(data)
 {
@@ -404,12 +404,15 @@ WizPluginPopupWidget::WizPluginPopupWidget(WizExplorerApp& app, WizPluginModuleD
 }
 
 WizPluginHtmlDialog::WizPluginHtmlDialog(WizExplorerApp& app, WizPluginModuleData* data, QWidget* parent)
-    : QWidget(parent)
+    : QWidget(parent, Qt::Window)
     , m_data(data)
     , m_dialogWidth(data->dialogWidth())
     , m_dialogHeight(data->dialogHeight())
 {
     data->parentPlugin()->initStrings();
+    //
+    setWindowTitle(data->caption());
+    //
     WizMainWindow* mw = qobject_cast<WizMainWindow*>(app.mainWindow());
     WizWebEngineViewInjectObjects objects = {
         {"WizPluginData", data->parentPlugin()},
@@ -421,11 +424,18 @@ WizPluginHtmlDialog::WizPluginHtmlDialog(WizExplorerApp& app, WizPluginModuleDat
     layout->setContentsMargins(0, 0, 0, 0);
     setLayout(layout);
     layout->addWidget(m_web);
+    //
+    m_web->load(QUrl::fromLocalFile(m_data->htmlFileName()));
+}
+
+QSize WizPluginHtmlDialog::dialogSize() const
+{
+    return QSize(m_dialogWidth, m_dialogHeight);
 }
 
 QSize WizPluginHtmlDialog::sizeHint() const
 {
-    return QSize(m_dialogWidth, m_dialogHeight);
+    return dialogSize();
 }
 
 WizPlugins::WizPlugins(QString basePath)

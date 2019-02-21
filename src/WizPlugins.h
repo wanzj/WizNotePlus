@@ -9,7 +9,7 @@
 
 class WizWebEngineView;
 class WizExplorerApp;
-class WizPluginPopupWidget;
+class WizPluginPopupDialog;
 class WizPluginData;
 
 class WizPluginModuleData : public QObject
@@ -105,15 +105,15 @@ private:
     int m_moduleCount;
     std::vector<WizPluginModuleData*> m_modules;
     //
-    friend class WizPluginPopupWidget;
+    friend class WizPluginPopupDialog;
     friend class WizPluginModuleData
 ;
 };
 
-class WizPluginPopupWidget : public WizPopupWidget
+class WizPluginPopupDialog : public WizPopupWidget
 {
 public:
-    WizPluginPopupWidget(WizExplorerApp& app, WizPluginModuleData* data, QWidget* parent);
+    WizPluginPopupDialog(WizExplorerApp& app, WizPluginModuleData* data, QWidget* parent);
 public:
     WizWebEngineView* web() const {return m_web; }
 private:
@@ -129,11 +129,9 @@ class WizPluginHtmlDialog : public QWidget
 {
     Q_OBJECT
 
-    friend class WizPluginData;
-    friend class WizPluginModuleData;
-
 public:
     WizPluginHtmlDialog(WizExplorerApp& app, WizPluginModuleData* data, QWidget* parent);
+    QSize dialogSize() const;
 
 private:
     WizWebEngineView* m_web;
@@ -143,6 +141,9 @@ private:
     //
 private:
     virtual QSize sizeHint() const;
+    //
+    friend class WizPluginData;
+    friend class WizPluginModuleData;
 };
 
 
