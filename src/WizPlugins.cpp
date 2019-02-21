@@ -5,6 +5,7 @@
 #include "utils/WizPathResolve.h"
 #include "widgets/WizLocalProgressWebView.h"
 
+#include <QDir>
 #include <QMovie>
 #include <QVBoxLayout>
 #include <QStyleFactory>
@@ -354,8 +355,8 @@ WizPluginModuleData::WizPluginModuleData(QString& section, WizSettings& setting,
     m_iconFileName = m_path + setting.getString(section, "IconFileName");
     m_htmlFileName = m_path + setting.getString(section, "HtmlFileName");
     m_scriptFileName = m_path + setting.getString(section, "ScriptFileName");
-    m_dialogWidth = setting.getString(section, "DialogWidth");
-    m_dialogHeight = setting.getString(section, "DialogHeight");
+    m_dialogWidth = setting.getInt(section, "DialogWidth", 800);
+    m_dialogHeight = setting.getInt(section, "DialogHeight", 500);
 }
 
 void WizPluginModuleData::emitDocumentChanged()
@@ -402,6 +403,31 @@ WizPluginPopupWidget::WizPluginPopupWidget(WizExplorerApp& app, WizPluginModuleD
     }
 }
 
+WizPluginHtmlDialog::WizPluginHtmlDialog(WizExplorerApp& app, WizPluginModuleData* data, QWidget* parent)
+    : QWidget(parent)
+    , m_data(data)
+    , m_dialogWidth(data->dialogWidth())
+    , m_dialogHeight(data->dialogHeight())
+{
+    data->parentPlugin()->initStrings();
+    WizMainWindow* mw = qobject_cast<WizMainWindow*>(app.mainWindow());
+    WizWebEngineViewInjectObjects objects = {
+        {"WizPluginData", data->parentPlugin()},
+        {"WizPluginModuleData", data},
+        {"WizExplorerApp", mw->componentInterface()}
+    };
+    m_web = new WizWebEngineView(objects, this);
+    QVBoxLayout* layout = new QVBoxLayout();
+    layout->setContentsMargins(0, 0, 0, 0);
+    setLayout(layout);
+    layout->addWidget(m_web);
+}
+
+QSize WizPluginHtmlDialog::sizeHint() const
+{
+    return QSize(m_dialogWidth, m_dialogHeight);
+}
+
 WizPlugins::WizPlugins(QString basePath)
 {
     init(basePath);
@@ -429,14 +455,11 @@ void WizPlugins::init(QString basePath)
     WizEnumFolders(basePath, folders, 0);
     //
     for (auto folder : folders) {
+        if (!QDir(folder).exists("manifest.ini"))
+            continue;
         WizPluginData* data = new WizPluginData(folder, nullptr);
-        qDebug() << data->name();
-        // if (data->scriptFileName().isEmpty()) {
-        //     delete data;
-        //     continue;
-        // }
-        //
         m_data.push_back(data);
+        qDebug() << "Loaded plugin: " + data->name();
     }
 }
 

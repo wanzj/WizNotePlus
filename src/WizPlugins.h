@@ -42,8 +42,8 @@ public:
     QString iconFileName() { return m_iconFileName; }
     QString htmlFileName() { return m_htmlFileName; }
     QString scriptFileName() { return m_scriptFileName; }
-    QString dialogWidth() { return m_dialogWidth; }
-    QString dialogHeight() { return m_dialogHeight; }
+    int dialogWidth() { return m_dialogWidth; }
+    int dialogHeight() { return m_dialogHeight; }
     void emitDocumentChanged();
     void emitShowEvent();
     
@@ -63,8 +63,8 @@ private:
     QString m_iconFileName;
     QString m_htmlFileName;
     QString m_scriptFileName;
-    QString m_dialogWidth;
-    QString m_dialogHeight;
+    int m_dialogWidth;
+    int m_dialogHeight;
 };
 
 class WizPluginData : public QObject
@@ -122,6 +122,27 @@ private:
     //
     friend class WizPluginData;
     friend class WizPluginModuleData;
+};
+
+
+class WizPluginHtmlDialog : public QWidget
+{
+    Q_OBJECT
+
+    friend class WizPluginData;
+    friend class WizPluginModuleData;
+
+public:
+    WizPluginHtmlDialog(WizExplorerApp& app, WizPluginModuleData* data, QWidget* parent);
+
+private:
+    WizWebEngineView* m_web;
+    WizPluginModuleData* m_data;
+    int m_dialogWidth;
+    int m_dialogHeight;
+    //
+private:
+    virtual QSize sizeHint() const;
 };
 
 

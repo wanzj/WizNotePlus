@@ -107,7 +107,7 @@ QWebEngineProfile* createWebEngineProfile(const WizWebEngineViewInjectObjects& o
         script.setName("qwebchannel.js");
         script.setWorldId(QWebEngineScript::MainWorld);
         script.setInjectionPoint(QWebEngineScript::DocumentCreation);
-        script.setRunsOnSubFrames(true);
+        script.setRunsOnSubFrames(false); // if set True, it will cause some error in javascript.
         profile->scripts()->insert(script);
     }
     //
