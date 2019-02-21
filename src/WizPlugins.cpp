@@ -269,49 +269,50 @@ WizPluginData::WizPluginData(QString path, QObject* parent)
     , m_path(path)
 {
     WizPathAddBackslash(m_path);
-    QString fileName = m_path + "plugin.ini";
+    QString fileName = m_path + "manifest.ini";
     QString section = "Common";
     //
     WizSettings plugin(fileName);
     m_name = plugin.getString(section, "AppName");
     m_type = plugin.getString(section, "Type");
     m_guid = plugin.getString(section, "AppGUID");
-    m_pluginCount = plugin.getInt(section, "PluginCount");
+    m_moduleCount = plugin.getInt(section, "ModuleCount");
     //m_scriptFileName = m_path + "index.html";
     //m_icon = WizLoadSkinIcon("", m_path + "plugin.svg", QSize(WizSmartScaleUIEx(14), WizSmartScaleUIEx(14)), ICON_OPTIONS);
     //
-    int realPluginCount = 0;
+    int realModuleCount = 0;
     QStringList groups = plugin.childGroups();
     for (QString& pluginIndex : groups) {
-        if (!pluginIndex.contains("Plugin_"))
+        if (!pluginIndex.contains("Module_"))
             continue;
-        plugin.beginGroup(pluginIndex);
-        //
-        WizChildPluginData* data = new WizChildPluginData(pluginIndex, plugin, this);
-        //
-        m_childPlugins.push_back(data);
-        realPluginCount++;
-        //
-        plugin.endGroup();
+        WizPluginModuleData* data = new WizPluginModuleData(pluginIndex, plugin, this);
+        m_modules.push_back(data);
+        realModuleCount++;
     }
-    if (realPluginCount != m_pluginCount)
-        qWarning() << QString("App %s's PluginCount not correct!").arg(m_name);
+    if (realModuleCount != m_moduleCount)
+        qWarning() << QString("App %s's ModuleCount not correct!").arg(m_name);
 }
 //
 void WizPluginData::emitDocumentChanged()
 {
     emit documentChanged();
+    for (WizPluginModuleData* data : m_modules) {
+        data->emitDocumentChanged();
+    }
 }
 
 void WizPluginData::emitShowEvent()
 {
     emit willShow();
+    for (WizPluginModuleData* data : m_modules) {
+        data->emitShowEvent();
+    }
 }
 
 void WizPluginData::initStrings()
 {
     WizPathAddBackslash(m_path);
-    QString fileName = m_path + "plugin.ini";
+    QString fileName = m_path + "manifest.ini";
     //
     WizSettings plugin(fileName);
     CWizStdStringArray keys;
@@ -340,31 +341,44 @@ void WizPluginData::initStrings()
     m_strings = strings;
 }
 
-WizChildPluginData::WizChildPluginData(QString& section, WizSettings& setting, QObject* parent)
+WizPluginModuleData::WizPluginModuleData(QString& section, WizSettings& setting, QObject* parent)
     : m_section(section)
 {
+    m_parentPlugin = qobject_cast<WizPluginData*>(parent);
+    m_path = m_parentPlugin->path();
     m_caption = setting.getString(section, "Caption");
     m_guid = setting.getString(section, "GUID");
     m_type = setting.getString(section, "Type");
     m_buttonType = setting.getString(section, "ButtonType");
     m_menuType = setting.getString(section, "MenuType");
-    m_iconFileName = setting.getString(section, "IconFileName");
-    m_htmlFileName = setting.getString(section, "HtmlFileName");
-    m_scriptFileName = setting.getString(section, "ScriptFileName");
+    m_iconFileName = m_path + setting.getString(section, "IconFileName");
+    m_htmlFileName = m_path + setting.getString(section, "HtmlFileName");
+    m_scriptFileName = m_path + setting.getString(section, "ScriptFileName");
     m_dialogWidth = setting.getString(section, "DialogWidth");
     m_dialogHeight = setting.getString(section, "DialogHeight");
 }
 
+void WizPluginModuleData::emitDocumentChanged()
+{
+    emit documentChanged();
+}
 
-WizPluginPopupWidget::WizPluginPopupWidget(WizExplorerApp& app, WizPluginData* data, QWidget* parent)
+void WizPluginModuleData::emitShowEvent()
+{
+    emit willShow();
+}
+
+
+WizPluginPopupWidget::WizPluginPopupWidget(WizExplorerApp& app, WizPluginModuleData* data, QWidget* parent)
     : WizPopupWidget(parent)
     , m_data(data)
 {
-    data->initStrings();
+    data->parentPlugin()->initStrings();
     //
     WizMainWindow* mw = qobject_cast<WizMainWindow*>(app.mainWindow());
     WizWebEngineViewInjectObjects objects = {
-        {"WizPluginData", m_data},
+        {"WizPluginData", data->parentPlugin()},
+        {"WizPluginModuleData", data},
         {"WizExplorerApp", mw->componentInterface()}
     };
     m_web = new WizWebEngineView(objects, this);
@@ -378,13 +392,13 @@ WizPluginPopupWidget::WizPluginPopupWidget(WizExplorerApp& app, WizPluginData* d
     //
     if (isDarkMode()) {
         QString html;
-        WizLoadUnicodeTextFromFile(m_data->scriptFileName(), html);
+        WizLoadUnicodeTextFromFile(m_data->htmlFileName(), html);
         QString style = "<link type=\"text/css\" href=\"nightModeStyle.css\" rel=\"stylesheet\" />";
         WizHTMLAppendTextInHead(style, html);
-        m_web->setHtml(html, QUrl::fromLocalFile(m_data->scriptFileName()));
+        m_web->setHtml(html, QUrl::fromLocalFile(m_data->htmlFileName()));
 
     } else {
-        m_web->load(QUrl::fromLocalFile(m_data->scriptFileName()));
+        m_web->load(QUrl::fromLocalFile(m_data->htmlFileName()));
     }
 }
 
@@ -445,14 +459,14 @@ std::vector<WizPluginData*> WizPlugins::pluginsByType(QString type) const
     return ret;
 }
 
-std::vector<WizChildPluginData*> WizPlugins::pluginsByButtonType(QString buttonType) const
+std::vector<WizPluginModuleData*> WizPlugins::modulesByButtonType(QString buttonType) const
 {
     WizPlugins& plugins = WizPlugins::plugins();
-    std::vector<WizChildPluginData*> ret;
+    std::vector<WizPluginModuleData*> ret;
     for (WizPluginData* data : plugins.m_data) {
-        for (WizChildPluginData* child : data->childPlugins()) {
-            if (child->buttonType() == buttonType) {
-                ret.push_back(child);
+        for (WizPluginModuleData* module : data->modules()) {
+            if (module->buttonType() == buttonType) {
+                ret.push_back(module);
             }
         }
     }

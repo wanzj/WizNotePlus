@@ -218,7 +218,7 @@
         strings = JSON.parse(pluginData.strings);
         objApp.LoadStringFromFile = LoadStringFromFile;
         //
-        languangeFileName = pluginPath + "plugin.ini";
+        languangeFileName = pluginPath + "manifest.ini";
         //
         browserObject.ExecuteScript("document.body.textContent", function(text) {
             if (text && text.length > 0) {

@@ -149,7 +149,7 @@ private:
     QString m_strWebchannelUrl;
     WizAnimateAction* m_editButtonAnimation;
     //
-    std::vector<WizPluginData*> m_plugins;
+    std::vector<WizPluginModuleData*> m_plugins;
     std::map<QString, WizPluginPopupWidget*>m_pluginWidget;
 };
 

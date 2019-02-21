@@ -269,14 +269,15 @@ WizTitleBar::WizTitleBar(WizExplorerApp& app, QWidget *parent)
 void WizTitleBar::initPlugins(QToolBar* docToolbar)
 {
     int nTitleHeight = Utils::WizStyleHelper::titleEditorHeight();
-    m_plugins = WizPlugins::plugins().pluginsByType("document");
+    m_plugins = WizPlugins::plugins().modulesByButtonType("Document");
     for (auto data : m_plugins) {
         //
         WizToolButton* button = new WizToolButton(this, WizCellButton::ImageOnly);
         button->setUserObject(data);
         button->setFixedHeight(nTitleHeight);
-        button->setIcon(data->icon());
-        button->setToolTip(data->name());
+        button->setIcon(WizLoadSkinIcon("", data->iconFileName(), 
+            QSize(TITLE_BUTTON_ICON_SIZE, TITLE_BUTTON_ICON_SIZE), ICON_OPTIONS));
+        button->setToolTip(data->caption());
         connect(button, SIGNAL(clicked()), SLOT(onPluginButtonClicked()));
         docToolbar->addWidget(button);
         //
@@ -290,7 +291,7 @@ void WizTitleBar::onPluginButtonClicked()
         return;
     }
     //
-    WizPluginData* data = dynamic_cast<WizPluginData *>(button->userObject());
+    WizPluginModuleData* data = dynamic_cast<WizPluginModuleData *>(button->userObject());
     if (!data) {
         return;
     }

@@ -265,6 +265,7 @@
     var objApp;
     var pluginPath;
     var pluginData;
+    var moduleData;
     var objWindow;
     var browserObject;
     var htmltext = "";
@@ -283,21 +284,22 @@
       //
       objApp = window.WizExplorerApp;
       pluginData = window.WizPluginData;
+      moduleData = window.WizPluginModuleData;
       pluginPath = pluginData.path;
       objWindow = objApp.Window;
       browserObject = objWindow.CurrentDocumentBrowserObject;
       strings = JSON.parse(pluginData.strings);
       objApp.LoadStringFromFile = LoadStringFromFile;
       //
-      languangeFileName = pluginPath + "plugin.ini";
+      languangeFileName = pluginPath + "manifest.ini";
       //
       loadData();
       //
-      pluginData.documentChanged.connect(() => {
+      moduleData.documentChanged.connect(() => {
         clear();
       });
       //
-      pluginData.willShow.connect(() => {
+      moduleData.willShow.connect(() => {
         loadData();
       });
       //
