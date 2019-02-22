@@ -156,6 +156,7 @@ WIZACTION* WizActions::actionsData()
 }
 
 const WizIconOptions ICON_OPTIONS = WizIconOptions(Qt::transparent, "#a6a6a6", Qt::transparent);
+
 /** 添加动作的同时，链接信号到父组件的槽函数
  *
  *  @param action 待添加的动作，是一个聚合类

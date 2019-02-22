@@ -75,6 +75,8 @@ class WizDocumentView;
 class WizDocumentWebViewSaverThread;
 class WizSingleDocumentViewDelegate;
 class QWebEngineView;
+class WizPluginModuleData;
+class WizPluginHtmlDialog;
 
 class IWizExplorerApp; // interface
 
@@ -166,6 +168,7 @@ private:
     WizMacToolBarButtonItem* m_newNoteButton;
 #else
     QToolBar* m_toolBar;
+    std::vector<WizPluginModuleData*> m_toolBarPlugins;
     WizFixedSpacer* m_spacerForToolButtonAdjust;
 #endif
 
@@ -234,6 +237,7 @@ private:
     //
     QFileSystemWatcher* m_extFileWatcher;
     QMap<QString, WizExternalEditTask> m_watchedFileData;
+    std::map<QString, WizPluginHtmlDialog*> m_pluginHtmlDialog;
 
 private:
     void initQuitHandler();
@@ -242,6 +246,7 @@ private:
     void initSyncQuick();
     void initActions();
     void initToolBar();
+    void initPluginButtons();
     void initClient();
     //
 #ifndef Q_OS_MAC
@@ -495,6 +500,7 @@ public Q_SLOTS:
     void on_mainTabWidget_currentChanged(int pageIndex);
 
     void onWatchedDocumentChanged(const QString& fileName);
+    void handlePluginHtmlDialogShow();
 
 public:
     // WizExplorerApp pointer

@@ -274,12 +274,12 @@ void WizTitleBar::initPlugins(QToolBar* docToolbar)
     m_plugins = WizPlugins::plugins().modulesByButtonType("Document");
     for (WizPluginModuleData* data : m_plugins) {
         //
-        WizToolButton* button = new WizToolButton(this, WizCellButton::ImageOnly);
-        button->setUserObject(data);
+        WizToolButton* button = WizPlugins::makePluginButton(
+            this, WizToolButton::ImageOnly, data,
+            QSize(TITLE_BUTTON_ICON_SIZE, TITLE_BUTTON_ICON_SIZE), 
+            ICON_OPTIONS
+        );
         button->setFixedHeight(nTitleHeight);
-        button->setIcon(WizLoadSkinIcon("", data->iconFileName(), 
-            QSize(TITLE_BUTTON_ICON_SIZE, TITLE_BUTTON_ICON_SIZE), ICON_OPTIONS));
-        button->setToolTip(data->caption());
         //
         QString moduleType = data->type();
         if ( moduleType == "PopupDialog" ) {
@@ -305,26 +305,9 @@ void WizTitleBar::handlePluginPopupDialogShow()
         return;
     }
     //
-    QString guid = data->guid();
-    auto it = m_pluginPopupDialog.find(guid);
-    WizPluginPopupDialog* widget;
-    if (it == m_pluginPopupDialog.end()) {
-        widget = new WizPluginPopupDialog(m_app, data, this);
-        m_pluginPopupDialog.insert(std::make_pair(guid, widget));
-    } else {
-        widget = it->second;
-    }
-    //
-    QRect rc = button->rect();
-    QPoint pt = button->mapToGlobal(QPoint(rc.width()/2, rc.height()));
-    data->emitShowEvent();
-    if (isDarkMode()) {
-        widget->web()->setVisible(false);
-        QTimer::singleShot(500, [=] {
-            widget->web()->setVisible(true);
-        });
-    }
-    widget->showAtPoint(pt);
+    WizPlugins::handlePluginHtmlDialogShow(
+        m_app, this, data, m_pluginHtmlDialog
+    );
 }
 
 void WizTitleBar::handlePluginHtmlDialogShow()

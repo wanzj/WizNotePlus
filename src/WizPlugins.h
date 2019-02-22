@@ -3,9 +3,11 @@
 
 #include <QDialog>
 #include <QIcon>
+#include <QSize>
 #include "share/WizWebEngineView.h"
 #include "share/WizPopupWidget.h"
 #include "share/WizSettings.h"
+#include "WizCellButton.h"
 
 class WizWebEngineView;
 class WizExplorerApp;
@@ -165,6 +167,17 @@ public:
     void notifyDocumentChanged();
 public:
     static WizPlugins& plugins();
+    static WizToolButton* makePluginButton(
+        QWidget* parent, WizToolButton::ButtonType type, 
+        WizPluginModuleData* moduleData, const QSize& iconSize, 
+        const WizIconOptions& option
+    );
+    static void handlePluginHtmlDialogShow(
+        WizExplorerApp& app,
+        QWidget* parent,
+        WizPluginModuleData* moduleData, 
+        std::map<QString, WizPluginHtmlDialog*>& htmlDialogs
+    );
 };
 
 

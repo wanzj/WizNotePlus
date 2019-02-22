@@ -107,6 +107,7 @@
 #include "WizCellButton.h"
 #include "interface/IWizExplorerApp.h"
 #include "WizFileImporter.h"
+#include "WizPlugins.h"
 
 #define MAINWINDOW  "MainWindow"
 
@@ -2187,6 +2188,8 @@ void WizMainWindow::initToolBar()
     //         .arg(strIconPath);
     // buttonNew->setStyleSheet(newButtonStyleSheet);
     m_toolBar->addWidget(buttonNew);
+    m_toolBar->addWidget(new WizFixedSpacer(QSize(5, 1), m_toolBar));
+    initPluginButtons();
     //
     m_toolBar->addWidget(new WizSpacer(m_toolBar));
 
@@ -2196,6 +2199,46 @@ void WizMainWindow::initToolBar()
 #endif
     //
     connect(m_searchWidget, SIGNAL(doSearch(const QString&)), SLOT(on_search_doSearch(const QString&)));
+}
+
+void WizMainWindow::initPluginButtons()
+{
+    m_toolBarPlugins = WizPlugins::plugins().modulesByButtonType("Main");
+    for (WizPluginModuleData* data : m_toolBarPlugins) {
+        //
+        WizToolButton* button = WizPlugins::makePluginButton(
+            this, WizToolButton::ImageOnly, data,
+            QSize(WizSmartScaleUIEx(18), WizSmartScaleUIEx(18)), 
+            WizIconOptions(Qt::transparent, "#a6a6a6", Qt::transparent)
+        );
+        //
+        QString moduleType = data->type();
+        if ( moduleType == "PopupDialog" ) {
+            //connect(button, SIGNAL(clicked()), SLOT(handlePluginPopupDialogShow()));
+        } else if ( moduleType == "HtmlDialog" ) {
+            connect(button, SIGNAL(clicked()), SLOT(handlePluginHtmlDialogShow()));
+        }
+        //
+        m_toolBar->addWidget(button);
+        //
+    }
+}
+
+void WizMainWindow::handlePluginHtmlDialogShow()
+{
+    WizToolButton* button = dynamic_cast<WizToolButton *>(sender());
+    if (!button) {
+        return;
+    }
+    //
+    WizPluginModuleData* data = dynamic_cast<WizPluginModuleData *>(button->userObject());
+    if (!data) {
+        return;
+    }
+    //
+    WizPlugins::handlePluginHtmlDialogShow(
+        *this, this, data, m_pluginHtmlDialog
+    );
 }
 
 /**

@@ -5,6 +5,9 @@
 #include "utils/WizPathResolve.h"
 #include "widgets/WizLocalProgressWebView.h"
 
+#include <QApplication>
+#include <QDesktopWidget>
+#include <QStyle>
 #include <QDir>
 #include <QMovie>
 #include <QVBoxLayout>
@@ -511,4 +514,46 @@ WizPlugins& WizPlugins::plugins()
     QStringList pluginBase = Utils::WizPathResolve::pluginsAllPath();
     static WizPlugins plugins(pluginBase);
     return plugins;
+}
+
+WizToolButton* WizPlugins::makePluginButton(
+    QWidget* parent, WizToolButton::ButtonType type, 
+    WizPluginModuleData* moduleData, const QSize& iconSize, const WizIconOptions& option)
+{
+    WizToolButton* button = new WizToolButton(parent, WizCellButton::ImageOnly);
+    button->setUserObject(moduleData);
+    button->setIconSize(iconSize);
+    button->setIcon(WizLoadSkinIcon("", moduleData->iconFileName(), iconSize, option));
+    button->setText(moduleData->caption());
+    button->setToolTip(moduleData->caption());
+    return button;
+}
+
+void WizPlugins::handlePluginHtmlDialogShow(
+        WizExplorerApp& app,
+        QWidget* parent,
+        WizPluginModuleData* moduleData, 
+        std::map<QString, WizPluginHtmlDialog*>& htmlDialogs)
+{
+    QString guid = moduleData->guid();
+    auto it = htmlDialogs.find(guid);
+    WizPluginHtmlDialog* widget;
+    if (it == htmlDialogs.end()) {
+        widget = new WizPluginHtmlDialog(app, moduleData, parent);
+        htmlDialogs.insert(std::make_pair(guid, widget));
+    } else {
+        widget = it->second;
+    }
+    //
+    moduleData->emitShowEvent();
+    widget->setGeometry(
+        QStyle::alignedRect(
+            Qt::LeftToRight,
+            Qt::AlignCenter,
+            widget->dialogSize(),
+            qApp->desktop()->availableGeometry()
+        )
+    );
+    widget->show();
+    widget->raise();
 }
