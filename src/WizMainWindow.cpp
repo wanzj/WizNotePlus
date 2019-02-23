@@ -130,6 +130,7 @@ WizMainWindow::WizMainWindow(WizDatabaseManager& dbMgr, QWidget *parent)
     , m_userVerifyDialog(nullptr)
     , m_iapDialog(nullptr)
     , m_templateIAPDialog(nullptr)
+    , m_jsPluginMgr(nullptr)
     , m_menuBar(nullptr)
     , m_dockMenu(nullptr)
     , m_windowListMenu(nullptr)
@@ -189,8 +190,6 @@ WizMainWindow::WizMainWindow(WizDatabaseManager& dbMgr, QWidget *parent)
     // 多线程设置
     //-------------------------------------------------------------------
 
-
-
     // search and full text search
     initSearcher();
 
@@ -211,6 +210,10 @@ WizMainWindow::WizMainWindow(WizDatabaseManager& dbMgr, QWidget *parent)
 
     // 初始化GUI
     //-------------------------------------------------------------------
+
+    // init javascript plugin manager
+    QStringList pluginScanPathList = Utils::WizPathResolve::pluginsAllPath();
+    m_jsPluginMgr = new WizJsPluginManager(pluginScanPathList, *this, this);
 
     // 根据列表来初始化所有动作
     initActions();
@@ -2189,7 +2192,7 @@ void WizMainWindow::initToolBar()
     // buttonNew->setStyleSheet(newButtonStyleSheet);
     m_toolBar->addWidget(buttonNew);
     m_toolBar->addWidget(new WizFixedSpacer(QSize(5, 1), m_toolBar));
-    initPluginButtons();
+    initToolBarPluginButtons();
     //
     m_toolBar->addWidget(new WizSpacer(m_toolBar));
 
@@ -2201,7 +2204,7 @@ void WizMainWindow::initToolBar()
     connect(m_searchWidget, SIGNAL(doSearch(const QString&)), SLOT(on_search_doSearch(const QString&)));
 }
 
-void WizMainWindow::initPluginButtons()
+void WizMainWindow::initToolBarPluginButtons()
 {
     m_toolBarPlugins = WizPlugins::plugins().modulesByButtonType("Main");
     for (WizPluginModuleData* data : m_toolBarPlugins) {
@@ -2222,6 +2225,7 @@ void WizMainWindow::initPluginButtons()
         m_toolBar->addWidget(button);
         //
     }
+    
 }
 
 void WizMainWindow::handlePluginHtmlDialogShow()

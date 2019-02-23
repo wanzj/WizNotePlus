@@ -7,6 +7,7 @@
 
 #include <QApplication>
 #include <QDesktopWidget>
+#include <QAction>
 #include <QStyle>
 #include <QDir>
 #include <QMovie>
@@ -346,7 +347,8 @@ void WizPluginData::initStrings()
 }
 
 WizPluginModuleData::WizPluginModuleData(QString& section, WizSettings& setting, QObject* parent)
-    : m_section(section)
+    : QObject(parent)
+    , m_section(section)
 {
     m_parentPlugin = qobject_cast<WizPluginData*>(parent);
     m_path = m_parentPlugin->path();
@@ -371,7 +373,6 @@ void WizPluginModuleData::emitShowEvent()
 {
     emit willShow();
 }
-
 
 WizPluginPopupDialog::WizPluginPopupDialog(WizExplorerApp& app, WizPluginModuleData* data, QWidget* parent)
     : WizPopupWidget(parent)
@@ -556,4 +557,171 @@ void WizPlugins::handlePluginHtmlDialogShow(
     );
     widget->show();
     widget->raise();
+}
+
+WizJsPluginManager::WizJsPluginManager(QStringList &pluginScanPathList, WizExplorerApp& app, QObject* parent)
+    : QObject(parent)
+    , m_app(app)
+{
+    for (QString &path : pluginScanPathList) {
+        loadPluginData(path);
+    }
+}
+
+WizJsPluginManager::~WizJsPluginManager()
+{
+    for (auto htmlDialog : m_pluginHtmlDialogCollection) {
+        delete htmlDialog;
+    }
+    m_pluginHtmlDialogCollection.clear();
+    //
+    for (auto popupDialog : m_pluginHtmlDialogCollection) {
+        delete popupDialog;
+    }
+    m_pluginHtmlDialogCollection.clear();
+
+}
+
+void WizJsPluginManager::loadPluginData(QString &pluginScanPath)
+{
+    CWizStdStringArray folders;
+    WizEnumFolders(pluginScanPath, folders, 0);
+    //
+    for (auto folder : folders) {
+        if (!QDir(folder).exists("manifest.ini"))
+            continue;
+        WizPluginData* data = new WizPluginData(folder, this);
+        m_pluginDataCollection.push_back(data);
+        qDebug() << "Loaded plugin: " + data->name();
+    }
+}
+
+QList<WizPluginModuleData *> WizJsPluginManager::modulesByButtonType(QString &buttonType) const
+{
+    QList<WizPluginModuleData *> ret;
+    for (WizPluginData *pluginData : m_pluginDataCollection) {
+        for (WizPluginModuleData *moduleData : pluginData->modules()) {
+            if (moduleData->buttonType() == buttonType) {
+                ret.push_back(moduleData);
+            }
+        }
+    }
+    return ret;
+}
+
+/**
+ * @brief Help toolbars make standard plugin tool button.
+ * 
+ * @param parent The parent of tool button.
+ * @param type 
+ * @param moduleData 
+ * @param iconSize 
+ * @param option 
+ * @return WizToolButton* 
+ */
+WizToolButton* WizJsPluginManager::createPluginToolButton(
+    QWidget* parent, WizToolButton::ButtonType type, 
+    WizPluginModuleData* moduleData, const QSize& iconSize, const WizIconOptions& option)
+{
+    WizToolButton* button = new WizToolButton(parent, WizCellButton::ImageOnly);
+    button->setUserObject(moduleData);
+    button->setIconSize(iconSize);
+    button->setIcon(WizLoadSkinIcon("", moduleData->iconFileName(), iconSize, option));
+    button->setText(moduleData->caption());
+    button->setToolTip(moduleData->caption());
+    //
+    connect(button, &WizToolButton::clicked, 
+        this, &WizJsPluginManager::handlePluginToolButtonClicked);
+    //
+    return button;
+}
+
+QAction *WizJsPluginManager::createPluginAction(QWidget *parent, WizPluginModuleData *moduleData)
+{
+    QAction *ac = new QAction(parent);
+    ac->setData(moduleData->guid());
+    ac->setIcon(QIcon(moduleData->iconFileName()));
+    ac->setIconText(moduleData->caption());
+    ac->setText(moduleData->caption());
+    ac->setToolTip(moduleData->caption());
+    return ac;
+}
+
+WizPluginHtmlDialog *WizJsPluginManager::initPluginHtmlDialog(WizPluginModuleData *moduleData)
+{
+    WizPluginHtmlDialog *htmlDialog = new WizPluginHtmlDialog(m_app, moduleData, nullptr);
+    m_pluginHtmlDialogCollection.insert(moduleData->guid(), htmlDialog);
+}
+
+WizPluginPopupDialog *WizJsPluginManager::initPluginPopupDialog(WizPluginModuleData *moduleData)
+{
+    WizPluginPopupDialog *popupDialog = new WizPluginPopupDialog(m_app, moduleData, nullptr);
+    m_pluginPopupDialogCollection.insert(moduleData->guid(), popupDialog);
+}
+
+void WizJsPluginManager::showPluginHtmlDialog(WizPluginModuleData *moduleData)
+{
+    QString guid = moduleData->guid();
+    WizPluginHtmlDialog* dialog;
+    auto it = m_pluginHtmlDialogCollection.find(guid);
+    if ( it == m_pluginHtmlDialogCollection.end()) {
+        dialog = initPluginHtmlDialog(moduleData);
+    } else {
+        dialog = it.value();
+    }
+    //
+    moduleData->emitShowEvent();
+    dialog->setGeometry(
+        QStyle::alignedRect(
+            Qt::LeftToRight,
+            Qt::AlignCenter,
+            dialog->dialogSize(),
+            qApp->desktop()->availableGeometry()
+        )
+    );
+    dialog->show();
+    dialog->raise();
+}
+
+void WizJsPluginManager::showPluginPopupDialog(WizPluginModuleData *moduleData, QPoint &pt)
+{
+    QString guid = moduleData->guid();
+    WizPluginPopupDialog* dialog;
+    auto it = m_pluginPopupDialogCollection.find(guid);
+    if ( it == m_pluginPopupDialogCollection.end()) {
+        dialog = initPluginPopupDialog(moduleData);
+    } else {
+        dialog = it.value();
+    }
+    //
+    moduleData->emitShowEvent();
+    if (isDarkMode()) {
+        dialog->web()->setVisible(false);
+        QTimer::singleShot(500, [=] {
+            dialog->web()->setVisible(true);
+        });
+    }
+    dialog->showAtPoint(pt);
+}
+
+void WizJsPluginManager::handlePluginToolButtonClicked()
+{
+    WizToolButton* button = dynamic_cast<WizToolButton *>(sender());
+    if (!button) {
+        return;
+    }
+    //
+    WizPluginModuleData* moduleData = dynamic_cast<WizPluginModuleData *>(button->userObject());
+    if (!moduleData) {
+        return;
+    }
+    //
+    QRect rc = button->rect();
+    QPoint pt = button->mapToGlobal(QPoint(rc.width()/2, rc.height()));
+    QString moduleType = moduleData->type();
+    if ( moduleType == "PopupDialog" ) {
+        showPluginPopupDialog(moduleData, pt);
+    } else if ( moduleType == "HtmlDialog" ) {
+        showPluginHtmlDialog(moduleData);
+    }
 }

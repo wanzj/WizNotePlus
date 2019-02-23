@@ -75,6 +75,7 @@ class WizDocumentView;
 class WizDocumentWebViewSaverThread;
 class WizSingleDocumentViewDelegate;
 class QWebEngineView;
+class WizJsPluginManager;
 class WizPluginModuleData;
 class WizPluginHtmlDialog;
 
@@ -155,6 +156,7 @@ private:
     WizUpgradeChecker* m_upgrade;
     WizIAPDialog* m_iapDialog;
     WizTemplatePurchaseDialog* m_templateIAPDialog;
+    WizJsPluginManager* m_jsPluginMgr;
     //
     bool m_quiting;
 
@@ -246,7 +248,7 @@ private:
     void initSyncQuick();
     void initActions();
     void initToolBar();
-    void initPluginButtons();
+    void initToolBarPluginButtons();
     void initClient();
     //
 #ifndef Q_OS_MAC

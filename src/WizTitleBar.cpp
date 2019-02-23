@@ -305,9 +305,26 @@ void WizTitleBar::handlePluginPopupDialogShow()
         return;
     }
     //
-    WizPlugins::handlePluginHtmlDialogShow(
-        m_app, this, data, m_pluginHtmlDialog
-    );
+    QString guid = data->guid();
+    auto it = m_pluginPopupDialog.find(guid);
+    WizPluginPopupDialog* widget;
+    if (it == m_pluginPopupDialog.end()) {
+        widget = new WizPluginPopupDialog(m_app, data, this);
+        m_pluginPopupDialog.insert(std::make_pair(guid, widget));
+    } else {
+        widget = it->second;
+    }
+    //
+    QRect rc = button->rect();
+    QPoint pt = button->mapToGlobal(QPoint(rc.width()/2, rc.height()));
+    data->emitShowEvent();
+    if (isDarkMode()) {
+        widget->web()->setVisible(false);
+        QTimer::singleShot(500, [=] {
+            widget->web()->setVisible(true);
+        });
+    }
+    widget->showAtPoint(pt);
 }
 
 void WizTitleBar::handlePluginHtmlDialogShow()
@@ -322,27 +339,9 @@ void WizTitleBar::handlePluginHtmlDialogShow()
         return;
     }
     //
-    QString guid = data->guid();
-    auto it = m_pluginHtmlDialog.find(guid);
-    WizPluginHtmlDialog* widget;
-    if (it == m_pluginHtmlDialog.end()) {
-        widget = new WizPluginHtmlDialog(m_app, data, this);
-        m_pluginHtmlDialog.insert(std::make_pair(guid, widget));
-    } else {
-        widget = it->second;
-    }
-    //
-    data->emitShowEvent();
-    widget->setGeometry(
-        QStyle::alignedRect(
-            Qt::LeftToRight,
-            Qt::AlignCenter,
-            widget->dialogSize(),
-            qApp->desktop()->availableGeometry()
-        )
+    WizPlugins::handlePluginHtmlDialogShow(
+        m_app, this, data, m_pluginHtmlDialog
     );
-    widget->show();
-    widget->raise();
 }
 
 /**
