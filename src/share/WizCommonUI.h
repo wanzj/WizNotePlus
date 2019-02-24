@@ -6,11 +6,12 @@
 class WizCommonUI : public QObject
 {
     Q_OBJECT
+    
 public:
     WizCommonUI(QObject* parent);
     //interface WizKMControls.WizCommonUI
-    Q_INVOKABLE QString LoadTextFromFile(const QString& strFileName) { return loadTextFromFile(strFileName); }
-    Q_INVOKABLE QString ClipboardToImage(int hwnd, const QString& strOptions) { return clipboardToImage(hwnd, strOptions); }
+    Q_INVOKABLE QString LoadTextFromFile(const QString& strFileName);
+    Q_INVOKABLE QString ClipboardToImage(int hwnd, const QString& strOptions);
 
 private:
     //interface WizKMControls.WizCommonUI;

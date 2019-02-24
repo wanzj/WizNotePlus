@@ -65,7 +65,7 @@ class WizDocumentWebView;
 class WizTrayIcon;
 class WizMobileFileReceiver;
 class ICore;
-class WizMainTabBrowser;
+class WizMainTabBrowserView;
 
 class WizMessageListView;
 class WizMessageSelector;
@@ -204,7 +204,7 @@ private:
 
     WizDocumentSelectionView* m_documentSelection;
     WizDocumentView* m_doc; /**< 用于储存多标签浏览器里当前活动笔记文档视图。 */
-    WizMainTabBrowser* m_mainTabBrowser; /**< 主标签部件，笔记文档视图储存在内部 */
+    WizMainTabBrowserView* m_mainTabBrowserView; /**< 主标签部件，笔记文档视图储存在内部 */
     WizSplitter* m_splitter;
     WizSplitter* m_subSplitter;
     QStackedWidget* m_subContainer;
@@ -306,7 +306,8 @@ public:
 
     //
     void refreshAd();
-    WizMainTabBrowser* mainTabView();
+    WizMainTabBrowserView* mainTabBrowserView() { return m_mainTabBrowserView; };
+    WizJsPluginManager* jsPluginMgr() { return m_jsPluginMgr; };
     //
     void showTrash();
     void showSharedNotes(); 

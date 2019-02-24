@@ -282,8 +282,6 @@ WizPluginData::WizPluginData(QString path, QObject* parent)
     m_type = plugin.getString(section, "Type");
     m_guid = plugin.getString(section, "AppGUID");
     m_moduleCount = plugin.getInt(section, "ModuleCount");
-    //m_scriptFileName = m_path + "index.html";
-    //m_icon = WizLoadSkinIcon("", m_path + "plugin.svg", QSize(WizSmartScaleUIEx(14), WizSmartScaleUIEx(14)), ICON_OPTIONS);
     //
     int realModuleCount = 0;
     QStringList groups = plugin.childGroups();
@@ -291,6 +289,7 @@ WizPluginData::WizPluginData(QString path, QObject* parent)
         if (!pluginIndex.contains("Module_"))
             continue;
         WizPluginModuleData* data = new WizPluginModuleData(pluginIndex, plugin, this);
+        //TODO: to validate the data, and if neccessary infomations are missed, discard it.
         m_modules.push_back(data);
         realModuleCount++;
     }
@@ -523,7 +522,6 @@ WizToolButton* WizPlugins::makePluginButton(
 {
     WizToolButton* button = new WizToolButton(parent, WizCellButton::ImageOnly);
     button->setUserObject(moduleData);
-    button->setIconSize(iconSize);
     button->setIcon(WizLoadSkinIcon("", moduleData->iconFileName(), iconSize, option));
     button->setText(moduleData->caption());
     button->setToolTip(moduleData->caption());
