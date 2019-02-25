@@ -36,6 +36,7 @@ public:
     QString caption() { return m_caption; }
     QString guid() { return m_guid; }
     QString type() { return m_type; }
+    QString moduleType() { return m_moduleType; }
     QString buttonType() { return m_buttonType; }
     QString menuType() { return m_menuType; }
     QString iconFileName() { return m_iconFileName; }
@@ -56,6 +57,7 @@ private:
     QString m_section;
     QString m_caption;
     QString m_guid;
+    QString m_moduleType;
     QString m_type;
     QString m_buttonType;
     QString m_menuType;
@@ -79,6 +81,7 @@ public:
     Q_PROPERTY(QString strings READ strings)
 
 public:
+    WizSettings *settings() { return m_settings; }
     QString path() const { return m_path; }
     QString guid() const { return m_guid; }
     QString type() const { return m_type; }
@@ -94,6 +97,7 @@ Q_SIGNALS:
     void willShow();
 
 private:
+    WizSettings *m_settings;
     QString m_path;
     QString m_guid;
     QString m_type;
@@ -174,15 +178,17 @@ public:
     );
 };
 
-class WizJsPluginManager : public QObject
+class WizJSPluginManager : public QObject
 {
     Q_OBJECT
 
 public:
-    WizJsPluginManager(QStringList &pluginScanPathList, WizExplorerApp& app, QObject *parent = nullptr);
-    ~WizJsPluginManager();
+    WizJSPluginManager(QStringList &pluginScanPathList, WizExplorerApp& app, QObject *parent = nullptr);
+    ~WizJSPluginManager();
     //
-    QList<WizPluginModuleData *> modulesByButtonType(QString &buttonType) const;
+    QList<WizPluginModuleData *> modulesByButtonType(QString buttonType) const;
+    QList<WizPluginModuleData *> modulesByKeyValue(QString key, QString value) const;
+    WizPluginModuleData *moduleByGUID(QString guid) const;
     //
     WizToolButton *createPluginToolButton(
         QWidget *parent,
@@ -201,7 +207,7 @@ private:
 
 public slots:
     void handlePluginToolButtonClicked();
-    //void handlePluginActionTriggered();
+    void handlePluginActionTriggered();
 
 private:
     WizExplorerApp &m_app;

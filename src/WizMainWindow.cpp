@@ -213,7 +213,7 @@ WizMainWindow::WizMainWindow(WizDatabaseManager& dbMgr, QWidget *parent)
 
     // init javascript plugin manager
     QStringList pluginScanPathList = Utils::WizPathResolve::pluginsAllPath();
-    m_jsPluginMgr = new WizJsPluginManager(pluginScanPathList, *this, this);
+    m_jsPluginMgr = new WizJSPluginManager(pluginScanPathList, *this, this);
 
     // 根据列表来初始化所有动作
     initActions();
@@ -2206,45 +2206,28 @@ void WizMainWindow::initToolBar()
 
 void WizMainWindow::initToolBarPluginButtons()
 {
-    m_toolBarPlugins = WizPlugins::plugins().modulesByButtonType("Main");
-    for (WizPluginModuleData* data : m_toolBarPlugins) {
-        //
-        WizToolButton* button = WizPlugins::makePluginButton(
-            this, WizToolButton::ImageOnly, data,
-            QSize(WizSmartScaleUIEx(18), WizSmartScaleUIEx(18)), 
+    QList<WizPluginModuleData *> modules = m_jsPluginMgr->modulesByButtonType("Main");
+    for (auto moduleData : modules) {
+        QSize iconSize(WizSmartScaleUIEx(18), WizSmartScaleUIEx(18));
+        WizToolButton *button = m_jsPluginMgr->createPluginToolButton(
+            this, WizToolButton::ImageOnly, moduleData, iconSize, 
             WizIconOptions(Qt::transparent, "#a6a6a6", Qt::transparent)
         );
-        //button->setIconSize(iconSize);
-        //
-        QString moduleType = data->type();
-        if ( moduleType == "PopupDialog" ) {
-            //connect(button, SIGNAL(clicked()), SLOT(handlePluginPopupDialogShow()));
-        } else if ( moduleType == "HtmlDialog" ) {
-            connect(button, SIGNAL(clicked()), SLOT(handlePluginHtmlDialogShow()));
-        }
+        button->setIconSize(iconSize);
+        connect(button, &WizToolButton::clicked, 
+            m_jsPluginMgr, &WizJSPluginManager::handlePluginToolButtonClicked);
         //
         m_toolBar->addWidget(button);
-        //
     }
     //
-    //QHash<WizPluginData *> &modules = m_jsPluginMgr->modulesByButtonType(QString("Main"));
-}
+    modules = m_jsPluginMgr->modulesByKeyValue("ModuleType", "Action");
+    for (auto moduleData : modules) {
+        QAction *ac = m_jsPluginMgr->createPluginAction(m_toolBar, moduleData);
+        connect(ac, &QAction::triggered, 
+            m_jsPluginMgr, &WizJSPluginManager::handlePluginActionTriggered);
 
-void WizMainWindow::handlePluginHtmlDialogShow()
-{
-    WizToolButton* button = dynamic_cast<WizToolButton *>(sender());
-    if (!button) {
-        return;
+        m_toolBar->addAction(ac);
     }
-    //
-    WizPluginModuleData* data = dynamic_cast<WizPluginModuleData *>(button->userObject());
-    if (!data) {
-        return;
-    }
-    //
-    WizPlugins::handlePluginHtmlDialogShow(
-        *this, this, data, m_pluginHtmlDialog
-    );
 }
 
 /**

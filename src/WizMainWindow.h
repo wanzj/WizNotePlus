@@ -75,7 +75,7 @@ class WizDocumentView;
 class WizDocumentWebViewSaverThread;
 class WizSingleDocumentViewDelegate;
 class QWebEngineView;
-class WizJsPluginManager;
+class WizJSPluginManager;
 class WizPluginModuleData;
 class WizPluginHtmlDialog;
 
@@ -156,7 +156,7 @@ private:
     WizUpgradeChecker* m_upgrade;
     WizIAPDialog* m_iapDialog;
     WizTemplatePurchaseDialog* m_templateIAPDialog;
-    WizJsPluginManager* m_jsPluginMgr;
+    WizJSPluginManager* m_jsPluginMgr;
     //
     bool m_quiting;
 
@@ -170,7 +170,6 @@ private:
     WizMacToolBarButtonItem* m_newNoteButton;
 #else
     QToolBar* m_toolBar;
-    std::vector<WizPluginModuleData*> m_toolBarPlugins;
     WizFixedSpacer* m_spacerForToolButtonAdjust;
 #endif
 
@@ -239,7 +238,6 @@ private:
     //
     QFileSystemWatcher* m_extFileWatcher;
     QMap<QString, WizExternalEditTask> m_watchedFileData;
-    std::map<QString, WizPluginHtmlDialog*> m_pluginHtmlDialog;
 
 private:
     void initQuitHandler();
@@ -307,7 +305,7 @@ public:
     //
     void refreshAd();
     WizMainTabBrowserView* mainTabBrowserView() { return m_mainTabBrowserView; };
-    WizJsPluginManager* jsPluginMgr() { return m_jsPluginMgr; };
+    WizJSPluginManager* jsPluginMgr() { return m_jsPluginMgr; };
     //
     void showTrash();
     void showSharedNotes(); 
@@ -503,7 +501,6 @@ public Q_SLOTS:
     void on_mainTabWidget_currentChanged(int pageIndex);
 
     void onWatchedDocumentChanged(const QString& fileName);
-    void handlePluginHtmlDialogShow();
 
 public:
     // WizExplorerApp pointer
