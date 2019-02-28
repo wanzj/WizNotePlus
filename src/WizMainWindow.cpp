@@ -2206,22 +2206,10 @@ void WizMainWindow::initToolBar()
 
 void WizMainWindow::initToolBarPluginButtons()
 {
-    QList<WizPluginModuleData *> modules = m_jsPluginMgr->modulesByButtonType("Main");
+    QList<WizPluginModuleData *> modules = m_jsPluginMgr->modulesByKeyValue("ModuleType", "Action");
     for (auto moduleData : modules) {
-        QSize iconSize(WizSmartScaleUIEx(18), WizSmartScaleUIEx(18));
-        WizToolButton *button = m_jsPluginMgr->createPluginToolButton(
-            this, WizToolButton::ImageOnly, moduleData, iconSize, 
-            WizIconOptions(Qt::transparent, "#a6a6a6", Qt::transparent)
-        );
-        button->setIconSize(iconSize);
-        connect(button, &WizToolButton::clicked, 
-            m_jsPluginMgr, &WizJSPluginManager::handlePluginToolButtonClicked);
-        //
-        m_toolBar->addWidget(button);
-    }
-    //
-    modules = m_jsPluginMgr->modulesByKeyValue("ModuleType", "Action");
-    for (auto moduleData : modules) {
+        if (moduleData->buttonLocation() != "Main")
+            continue;
         QAction *ac = m_jsPluginMgr->createPluginAction(m_toolBar, moduleData);
         connect(ac, &QAction::triggered, 
             m_jsPluginMgr, &WizJSPluginManager::handlePluginActionTriggered);

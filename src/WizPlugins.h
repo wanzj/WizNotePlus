@@ -8,7 +8,7 @@
 
 class WizWebEngineView;
 class WizExplorerApp;
-class WizPluginPopupDialog;
+class WizPluginSelectorWindow;
 class WizPluginData;
 
 class WizPluginModuleData : public QObject
@@ -21,29 +21,25 @@ public:
     Q_PROPERTY(QString section READ section)
     Q_PROPERTY(QString caption READ caption)
     Q_PROPERTY(QString guid READ guid)
-    Q_PROPERTY(QString type READ type)
-    Q_PROPERTY(QString buttonType READ buttonType)
-    Q_PROPERTY(QString menuType READ menuType)
+    Q_PROPERTY(QString moduleType READ moduleType)
     Q_PROPERTY(QString iconFileName READ iconFileName)
     Q_PROPERTY(QString htmlFileName READ htmlFileName)
     Q_PROPERTY(QString scriptFileName READ scriptFileName)
-    Q_PROPERTY(QString dialogWidth READ dialogWidth)
-    Q_PROPERTY(QString dialogHeight READ dialogHeight)
 
 public:
     WizPluginData* parentPlugin() { return m_parentPlugin; }
     QString section() { return m_section; }
     QString caption() { return m_caption; }
     QString guid() { return m_guid; }
-    QString type() { return m_type; }
+    QString slotType() { return m_slotType; }
     QString moduleType() { return m_moduleType; }
-    QString buttonType() { return m_buttonType; }
-    QString menuType() { return m_menuType; }
+    QString buttonLocation() { return m_buttonLocation; }
+    QString menuLocation() { return m_menuLocation; }
     QString iconFileName() { return m_iconFileName; }
     QString htmlFileName() { return m_htmlFileName; }
     QString scriptFileName() { return m_scriptFileName; }
-    int dialogWidth() { return m_dialogWidth; }
-    int dialogHeight() { return m_dialogHeight; }
+    int width() { return m_width; }
+    int height() { return m_height; }
     void emitDocumentChanged();
     void emitShowEvent();
     
@@ -52,20 +48,26 @@ Q_SIGNALS:
     void willShow();
 
 private:
+    // base info
+    
     WizPluginData* m_parentPlugin;
     QString m_path;
     QString m_section;
     QString m_caption;
     QString m_guid;
     QString m_moduleType;
-    QString m_type;
-    QString m_buttonType;
-    QString m_menuType;
+
+    // ModuleType=Action
+
+    QString m_slotType;
+    QString m_buttonLocation;
+    QString m_menuLocation;
     QString m_iconFileName;
     QString m_htmlFileName;
     QString m_scriptFileName;
-    int m_dialogWidth;
-    int m_dialogHeight;
+    int m_width;
+    int m_height;
+
 };
 
 class WizPluginData : public QObject
@@ -106,19 +108,24 @@ private:
     int m_moduleCount;
     QVector<WizPluginModuleData*> m_modules;
     //
-    friend class WizPluginPopupDialog;
+    friend class WizPluginSelectorWindow;
     friend class WizPluginModuleData;
 };
 
-class WizPluginPopupDialog : public WizPopupWidget
+class WizPluginSelectorWindow : public WizPopupWidget
 {
 public:
-    WizPluginPopupDialog(WizExplorerApp& app, WizPluginModuleData* data, QWidget* parent);
+    WizPluginSelectorWindow(WizExplorerApp& app, WizPluginModuleData* data, QWidget* parent);
 public:
     WizWebEngineView* web() const {return m_web; }
 private:
     WizWebEngineView* m_web;
     WizPluginModuleData* m_data;
+    int m_windowWidth;
+    int m_windowHeight;
+
+private:
+    virtual QSize sizeHint() const;
     //
     friend class WizPluginData;
     friend class WizPluginModuleData;
@@ -160,22 +167,10 @@ private:
     std::vector<WizPluginData*> m_data;
 public:
     std::vector<WizPluginData*> pluginsByType(QString type) const;
-    std::vector<WizPluginModuleData*> modulesByButtonType(QString buttonType) const;
     std::vector<WizPluginData*> pluginsAll() const { return m_data; }
     void notifyDocumentChanged();
 public:
     static WizPlugins& plugins();
-    static WizToolButton* makePluginButton(
-        QWidget* parent, WizToolButton::ButtonType type, 
-        WizPluginModuleData* moduleData, const QSize& iconSize, 
-        const WizIconOptions& option
-    );
-    static void handlePluginHtmlDialogShow(
-        WizExplorerApp& app,
-        QWidget* parent,
-        WizPluginModuleData* moduleData, 
-        std::map<QString, WizPluginHtmlDialog*>& htmlDialogs
-    );
 };
 
 class WizJSPluginManager : public QObject
@@ -186,34 +181,27 @@ public:
     WizJSPluginManager(QStringList &pluginScanPathList, WizExplorerApp& app, QObject *parent = nullptr);
     ~WizJSPluginManager();
     //
-    QList<WizPluginModuleData *> modulesByButtonType(QString buttonType) const;
+    QList<WizPluginModuleData *> modulesByButtonLocation(QString buttonLocation) const;
     QList<WizPluginModuleData *> modulesByKeyValue(QString key, QString value) const;
     WizPluginModuleData *moduleByGUID(QString guid) const;
     //
-    WizToolButton *createPluginToolButton(
-        QWidget *parent,
-        WizToolButton::ButtonType type,
-        WizPluginModuleData *moduleData,
-        const QSize &iconSize,
-        const WizIconOptions &option);
     static QAction *createPluginAction(QWidget *parent, WizPluginModuleData *moduleData);
     WizPluginHtmlDialog *initPluginHtmlDialog(WizPluginModuleData *moduleData);
     void showPluginHtmlDialog(WizPluginModuleData *moduleData);
-    WizPluginPopupDialog *initPluginPopupDialog(WizPluginModuleData *moduleData);
-    void showPluginPopupDialog(WizPluginModuleData *moduleData, QPoint &pt);
+    WizPluginSelectorWindow *initPluginSelectorWindow(WizPluginModuleData *moduleData);
+    void showPluginSelectorWindow(WizPluginModuleData *moduleData, QPoint &pt);
 
 private:
     void loadPluginData(QString &pluginScanPath);
 
 public slots:
-    void handlePluginToolButtonClicked();
     void handlePluginActionTriggered();
 
 private:
     WizExplorerApp &m_app;
     QList<WizPluginData *> m_pluginDataCollection;
     QHash<QString, WizPluginHtmlDialog *> m_pluginHtmlDialogCollection;
-    QHash<QString, WizPluginPopupDialog *> m_pluginPopupDialogCollection;
+    QHash<QString, WizPluginSelectorWindow *> m_pluginPopupDialogCollection;
 
 };
 

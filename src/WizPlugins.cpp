@@ -354,15 +354,16 @@ WizPluginModuleData::WizPluginModuleData(QString& section, WizSettings& setting,
     m_path = m_parentPlugin->path();
     m_caption = setting.getString(section, "Caption");
     m_guid = setting.getString(section, "GUID");
-    m_type = setting.getString(section, "Type");
     m_moduleType = setting.getString(section, "ModuleType");
-    m_buttonType = setting.getString(section, "ButtonType");
-    m_menuType = setting.getString(section, "MenuType");
+    //
+    m_slotType = setting.getString(section, "SlotType");
+    m_buttonLocation = setting.getString(section, "ButtonLocation");
+    m_menuLocation = setting.getString(section, "MenuLocation");
     m_iconFileName = m_path + setting.getString(section, "IconFileName");
     m_htmlFileName = m_path + setting.getString(section, "HtmlFileName");
     m_scriptFileName = m_path + setting.getString(section, "ScriptFileName");
-    m_dialogWidth = setting.getInt(section, "DialogWidth", 800);
-    m_dialogHeight = setting.getInt(section, "DialogHeight", 500);
+    m_width = setting.getInt(section, "Width", 800);
+    m_height = setting.getInt(section, "Height", 500);
 }
 
 void WizPluginModuleData::emitDocumentChanged()
@@ -375,9 +376,11 @@ void WizPluginModuleData::emitShowEvent()
     emit willShow();
 }
 
-WizPluginPopupDialog::WizPluginPopupDialog(WizExplorerApp& app, WizPluginModuleData* data, QWidget* parent)
+WizPluginSelectorWindow::WizPluginSelectorWindow(WizExplorerApp& app, WizPluginModuleData* data, QWidget* parent)
     : WizPopupWidget(parent)
     , m_data(data)
+    , m_windowWidth(data->width())
+    , m_windowHeight(data->height())
 {
     data->parentPlugin()->initStrings();
     //
@@ -408,11 +411,16 @@ WizPluginPopupDialog::WizPluginPopupDialog(WizExplorerApp& app, WizPluginModuleD
     }
 }
 
+QSize WizPluginSelectorWindow::sizeHint() const
+{
+    return QSize(m_windowWidth, m_windowHeight);
+}
+
 WizPluginHtmlDialog::WizPluginHtmlDialog(WizExplorerApp& app, WizPluginModuleData* data, QWidget* parent)
     : QWidget(parent, Qt::Window)
     , m_data(data)
-    , m_dialogWidth(data->dialogWidth())
-    , m_dialogHeight(data->dialogHeight())
+    , m_dialogWidth(data->width())
+    , m_dialogHeight(data->height())
 {
     data->parentPlugin()->initStrings();
     //
@@ -485,78 +493,11 @@ void WizPlugins::notifyDocumentChanged()
     }
 }
 
-std::vector<WizPluginData*> WizPlugins::pluginsByType(QString type) const
-{
-    WizPlugins& plugins = WizPlugins::plugins();
-    std::vector<WizPluginData*> ret;
-    for (auto data : plugins.m_data) {
-        if (data->type() == type) {
-            ret.push_back(data);
-        }
-    }
-    return ret;
-}
-
-std::vector<WizPluginModuleData*> WizPlugins::modulesByButtonType(QString buttonType) const
-{
-    WizPlugins& plugins = WizPlugins::plugins();
-    std::vector<WizPluginModuleData*> ret;
-    for (WizPluginData* data : plugins.m_data) {
-        for (WizPluginModuleData* module : data->modules()) {
-            if (module->buttonType() == buttonType) {
-                ret.push_back(module);
-            }
-        }
-    }
-    return ret;
-}
-
 WizPlugins& WizPlugins::plugins()
 {
     QStringList pluginBase = Utils::WizPathResolve::pluginsAllPath();
     static WizPlugins plugins(pluginBase);
     return plugins;
-}
-
-WizToolButton* WizPlugins::makePluginButton(
-    QWidget* parent, WizToolButton::ButtonType type, 
-    WizPluginModuleData* moduleData, const QSize& iconSize, const WizIconOptions& option)
-{
-    WizToolButton* button = new WizToolButton(parent, WizCellButton::ImageOnly);
-    button->setUserObject(moduleData);
-    button->setIcon(WizLoadSkinIcon("", moduleData->iconFileName(), iconSize, option));
-    button->setText(moduleData->caption());
-    button->setToolTip(moduleData->caption());
-    return button;
-}
-
-void WizPlugins::handlePluginHtmlDialogShow(
-        WizExplorerApp& app,
-        QWidget* parent,
-        WizPluginModuleData* moduleData, 
-        std::map<QString, WizPluginHtmlDialog*>& htmlDialogs)
-{
-    QString guid = moduleData->guid();
-    auto it = htmlDialogs.find(guid);
-    WizPluginHtmlDialog* widget;
-    if (it == htmlDialogs.end()) {
-        widget = new WizPluginHtmlDialog(app, moduleData, parent);
-        htmlDialogs.insert(std::make_pair(guid, widget));
-    } else {
-        widget = it->second;
-    }
-    //
-    moduleData->emitShowEvent();
-    widget->setGeometry(
-        QStyle::alignedRect(
-            Qt::LeftToRight,
-            Qt::AlignCenter,
-            widget->dialogSize(),
-            qApp->desktop()->availableGeometry()
-        )
-    );
-    widget->show();
-    widget->raise();
 }
 
 WizJSPluginManager::WizJSPluginManager(QStringList &pluginScanPathList, WizExplorerApp& app, QObject* parent)
@@ -575,8 +516,8 @@ WizJSPluginManager::~WizJSPluginManager()
     }
     m_pluginHtmlDialogCollection.clear();
     
-    for (auto popupDialog : m_pluginHtmlDialogCollection) {
-        delete popupDialog;
+    for (auto selectorWindow : m_pluginHtmlDialogCollection) {
+        delete selectorWindow;
     }
     m_pluginHtmlDialogCollection.clear();
 
@@ -596,12 +537,12 @@ void WizJSPluginManager::loadPluginData(QString &pluginScanPath)
     }
 }
 
-QList<WizPluginModuleData *> WizJSPluginManager::modulesByButtonType(QString buttonType) const
+QList<WizPluginModuleData *> WizJSPluginManager::modulesByButtonLocation(QString buttonLocation) const
 {
     QList<WizPluginModuleData *> ret;
     for (WizPluginData *pluginData : m_pluginDataCollection) {
         for (WizPluginModuleData *moduleData : pluginData->modules()) {
-            if (moduleData->buttonType() == buttonType) {
+            if (moduleData->buttonLocation() == buttonLocation) {
                 ret.push_back(moduleData);
             }
         }
@@ -638,32 +579,6 @@ WizPluginModuleData *WizJSPluginManager::moduleByGUID(QString guid) const
     return ret;
 }
 
-/**
- * @brief Help toolbars make standard plugin tool button.
- * 
- * @param parent The parent of tool button.
- * @param type 
- * @param moduleData 
- * @param iconSize 
- * @param option 
- * @return WizToolButton* 
- */
-WizToolButton* WizJSPluginManager::createPluginToolButton(
-    QWidget* parent, WizToolButton::ButtonType type, 
-    WizPluginModuleData* moduleData, const QSize& iconSize, const WizIconOptions& option)
-{
-    WizToolButton* button = new WizToolButton(parent, WizCellButton::ImageOnly);
-    button->setUserObject(moduleData);
-    button->setIcon(WizLoadSkinIcon("", moduleData->iconFileName(), iconSize, option));
-    button->setText(moduleData->caption());
-    button->setToolTip(moduleData->caption());
-    
-    connect(button, &WizToolButton::clicked, 
-        this, &WizJSPluginManager::handlePluginToolButtonClicked);
-    
-    return button;
-}
-
 QAction *WizJSPluginManager::createPluginAction(QWidget *parent, WizPluginModuleData *moduleData)
 {
     QAction *ac = new QAction(parent);
@@ -682,11 +597,11 @@ WizPluginHtmlDialog *WizJSPluginManager::initPluginHtmlDialog(WizPluginModuleDat
     return htmlDialog;
 }
 
-WizPluginPopupDialog *WizJSPluginManager::initPluginPopupDialog(WizPluginModuleData *moduleData)
+WizPluginSelectorWindow *WizJSPluginManager::initPluginSelectorWindow(WizPluginModuleData *moduleData)
 {
-    WizPluginPopupDialog *popupDialog = new WizPluginPopupDialog(m_app, moduleData, nullptr);
-    m_pluginPopupDialogCollection.insert(moduleData->guid(), popupDialog);
-    return popupDialog;
+    WizPluginSelectorWindow *selectorWindow = new WizPluginSelectorWindow(m_app, moduleData, nullptr);
+    m_pluginPopupDialogCollection.insert(moduleData->guid(), selectorWindow);
+    return selectorWindow;
 }
 
 void WizJSPluginManager::showPluginHtmlDialog(WizPluginModuleData *moduleData)
@@ -713,47 +628,25 @@ void WizJSPluginManager::showPluginHtmlDialog(WizPluginModuleData *moduleData)
     dialog->raise();
 }
 
-void WizJSPluginManager::showPluginPopupDialog(WizPluginModuleData *moduleData, QPoint &pt)
+void WizJSPluginManager::showPluginSelectorWindow(WizPluginModuleData *moduleData, QPoint &pt)
 {
     QString guid = moduleData->guid();
-    WizPluginPopupDialog* dialog;
+    WizPluginSelectorWindow* selectorWindow;
     auto it = m_pluginPopupDialogCollection.find(guid);
     if ( it == m_pluginPopupDialogCollection.end()) {
-        dialog = initPluginPopupDialog(moduleData);
+        selectorWindow = initPluginSelectorWindow(moduleData);
     } else {
-        dialog = it.value();
+        selectorWindow = it.value();
     }
     //
     moduleData->emitShowEvent();
     if (isDarkMode()) {
-        dialog->web()->setVisible(false);
+        selectorWindow->web()->setVisible(false);
         QTimer::singleShot(500, [=] {
-            dialog->web()->setVisible(true);
+            selectorWindow->web()->setVisible(true);
         });
     }
-    dialog->showAtPoint(pt);
-}
-
-void WizJSPluginManager::handlePluginToolButtonClicked()
-{
-    WizToolButton* button = dynamic_cast<WizToolButton *>(sender());
-    if (!button) {
-        return;
-    }
-    //
-    WizPluginModuleData* moduleData = dynamic_cast<WizPluginModuleData *>(button->userObject());
-    if (!moduleData) {
-        return;
-    }
-    //
-    QRect rc = button->rect();
-    QPoint pt = button->mapToGlobal(QPoint(rc.width()/2, rc.height()));
-    QString moduleType = moduleData->type();
-    if ( moduleType == "PopupDialog" ) {
-        showPluginPopupDialog(moduleData, pt);
-    } else if ( moduleType == "HtmlDialog" ) {
-        showPluginHtmlDialog(moduleData);
-    }
+    selectorWindow->showAtPoint(pt);
 }
 
 void WizJSPluginManager::handlePluginActionTriggered()
@@ -770,20 +663,18 @@ void WizJSPluginManager::handlePluginActionTriggered()
     if (!moduleData)
         return;
 
-    QToolBar *bar = qobject_cast<QToolBar *>(ac->parentWidget());
-    if (!bar)
-        return;
-
-    QToolButton *button = qobject_cast<QToolButton *>(bar->widgetForAction(ac));
-    if (!button)
-        return;
-
-    QRect rc = button->rect();
-    QPoint pt = button->mapToGlobal(QPoint(rc.width()/2, rc.height()));
-    QString moduleType = moduleData->type();
-    if ( moduleType == "PopupDialog" ) {
-        showPluginPopupDialog(moduleData, pt);
-    } else if ( moduleType == "HtmlDialog" ) {
+    QString slotType = moduleData->slotType();
+    if ( slotType == "SelectorWindow" ) {
+        QToolBar *bar = qobject_cast<QToolBar *>(ac->parentWidget());
+        if (!bar)
+            return;
+        QToolButton *button = qobject_cast<QToolButton *>(bar->widgetForAction(ac));
+        if (!button)
+            return;
+        QRect rc = button->rect();
+        QPoint pt = button->mapToGlobal(QPoint(rc.width()/2, rc.height()));
+        showPluginSelectorWindow(moduleData, pt);
+    } else if ( slotType == "HtmlDialog" ) {
         showPluginHtmlDialog(moduleData);
     }
 }

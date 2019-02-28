@@ -272,19 +272,15 @@ void WizTitleBar::initPlugins(QToolBar* docToolbar)
 {
     int nTitleHeight = Utils::WizStyleHelper::titleEditorHeight();
     WizJSPluginManager *jsPluginMgr = WizGlobal::mainWindow()->jsPluginMgr();
-    QList<WizPluginModuleData *> modules = jsPluginMgr->modulesByButtonType("Document");
-    for (WizPluginModuleData* data : modules) {
-        WizToolButton *button = jsPluginMgr->createPluginToolButton(
-            this, WizToolButton::ImageOnly, data, 
-            QSize(TITLE_BUTTON_ICON_SIZE, TITLE_BUTTON_ICON_SIZE), 
-            ICON_OPTIONS
-        );
-        button->setFixedHeight(nTitleHeight);
+    QList<WizPluginModuleData *> modules = jsPluginMgr->modulesByKeyValue("ModuleType", "Action");
+    for (auto moduleData : modules) {
+        if (moduleData->buttonLocation() != "Document")
+            continue;
+        QAction *ac = jsPluginMgr->createPluginAction(docToolbar, moduleData);
+        connect(ac, &QAction::triggered, 
+            jsPluginMgr, &WizJSPluginManager::handlePluginActionTriggered);
 
-        connect(button, &WizToolButton::clicked, 
-            jsPluginMgr, &WizJSPluginManager::handlePluginToolButtonClicked);
-
-        docToolbar->addWidget(button);
+        docToolbar->addAction(ac);
     }
 }
 
