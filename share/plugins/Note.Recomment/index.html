@@ -220,11 +220,10 @@
         //
         languangeFileName = pluginPath + "manifest.ini";
         //
-        browserObject.ExecuteScript("document.body.textContent", function(text) {
-            if (text && text.length > 0) {
-                Show(text);
-            }
-        });
+        const text = await browserObject.ExecuteScript("document.body.textContent");
+        if (text && text.length > 0) {
+            Show(text);
+        }
     }
     //
     initForWebEngine();

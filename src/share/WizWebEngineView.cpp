@@ -390,6 +390,31 @@ QVariant WizWebEngineView::ExecuteFunction4(QString function, const QVariant& ar
     return ExecuteScript(script);
 }
 
+/**
+ * @brief Set the zoom percentage of this page.
+ * 
+ * @param percent The range from 25 to 500. The default factor is 100.
+ */
+void WizWebEngineView::SetZoom(int percent)
+{
+    if ( percent < 25 && percent > 500)
+        return;
+    qreal factor = static_cast<qreal>(percent) / 100;
+    setZoomFactor(factor);
+}
+
+/**
+ * @brief Get the zoom percentage of this page.
+ * 
+ * @return int 
+ */
+int WizWebEngineView::GetZoom()
+{
+    qreal factor = zoomFactor();
+    int percent = static_cast<int>( qRound(factor * 100) );
+    return percent;
+}
+
 
 void WizWebEngineView::innerLoadFinished(bool ret)
 {

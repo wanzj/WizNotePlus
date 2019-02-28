@@ -362,156 +362,153 @@
       loadBookmarks();
     }
     // add outline contents
-    function loadContents() {
+    async function loadContents() {
       var scriptfile = pluginPath + "getOutlineContents.js";
-      browserObject.ExecuteScriptFile(scriptfile, function (text) {
-
-        var added = false;
+      const text = await browserObject.ExecuteScriptFile(scriptfile);
+      var added = false;
+      //
+      if (text && text.length > 0) {
         //
-        if (text && text.length > 0) {
+        var arrayOutlineContent = JSON.parse(text);
+        for (var i = 0; i < arrayOutlineContent.length; i++) {
+          var elemtext = arrayOutlineContent[i];
+          let text = elemtext.text;
+          text = text.trim();
+          text = text.replace(/\n/g, " ");
+          text = htmlEncode(text);
+          var tagName = elemtext.tagName;
+          var offsetTop = Number(elemtext.offsetTop);
+          var html = "";
           //
-          var arrayOutlineContent = JSON.parse(text);
-          for (var i = 0; i < arrayOutlineContent.length; i++) {
-            var elemtext = arrayOutlineContent[i];
-            var text = elemtext.text;
-            text = text.trim();
-            text = text.replace(/\n/g, " ");
-            text = htmlEncode(text);
-            var tagName = elemtext.tagName;
-            var offsetTop = Number(elemtext.offsetTop);
-            var html = "";
+          if (tagName == "h1") {
+            html = '<div class="box h1"><a class="head" href="javascript:void(0);" onclick="gotoElem(' +
+              offsetTop + ');"><span class="h1 wiz_pc_icon icon-dot_main"></span>' + text + '</a></div>';
             //
-            if (tagName == "h1") {
-              html = '<div class="box h1"><a class="head" href="javascript:void(0);" onclick="gotoElem(' +
-                offsetTop + ');"><span class="h1 wiz_pc_icon icon-dot_main"></span>' + text + '</a></div>';
-              //
-              added = true;
-            } else if (tagName == "h2") {
-              html = '<div class="box h2"><a class="head" href="javascript:void(0);" onclick="gotoElem(' +
-                offsetTop + ');"><span class="head wiz_pc_icon icon-dot_common"></span>' + text + '</a></div>';
-              //
-              added = true;
-            } else if (tagName == "h3") {
-              html = '<div class="box h3"><a class="head" href="javascript:void(0);" onclick="gotoElem(' +
-                offsetTop + ');"><span class="head wiz_pc_icon icon-dot_common"></span>' + text + '</a></div>';
-              //
-              added = true;
-            } else if (tagName == "h4") {
-              html = '<div class="box h4"><a class="head" href="javascript:void(0);" onclick="gotoElem(' +
-                offsetTop + ');"><span class="head wiz_pc_icon icon-dot_common"></span>' + text + '</a></div>';
-              //
-              added = true;
-            } else if (tagName == "h5") {
-              html = '<div class="box h5"><a class="head" href="javascript:void(0);" onclick="gotoElem(' +
-                offsetTop + ');"><span class="head wiz_pc_icon icon-dot_common"></span>' + text + '</a></div>';
-              //
-              added = true;
-            } else if (tagName == "h6") {
-              html = '<div class="box h6"><a class="head" href="javascript:void(0);" onclick="gotoElem(' +
-                offsetTop + ');"><span class="head wiz_pc_icon icon-dot_common"></span>' + text + '</a></div>';
-              //
-              added = true;
-            }
-            htmlOutlineText += html;
-          }
-        }
-        var tsOutline = objApp.LoadStringFromFile(languangeFileName, "strOutline");
-        var tsNoOutlineTitle = objApp.LoadStringFromFile(languangeFileName, "strNoOutlineTitle");
-        var tsNoOutlineSubTitle = objApp.LoadStringFromFile(languangeFileName, "strNoOutlineSubTitle");
-        //
-        if (added) {
-          htmlOutlineText = '<div><div class="category">' + tsOutline + '</div><div id="heads">' + htmlOutlineText +
-            '</div></div>';
-        } else {
-          htmlOutlineText = '<div><div class="category">' + tsOutline + '</div><div class="title">' +
-            tsNoOutlineTitle + '</div><div class="subtitle">' + tsNoOutlineSubTitle + '</div></div>';
-        }
-        isAddOutlineContents = true;
-        Show();
-      });
-    }
-    //
-    function loadBookmarks() {
-      var scriptfile = pluginPath + "getBookmarks.js";
-      browserObject.ExecuteScriptFile(scriptfile, function (text) {
-        var added = false;
-        //
-        if (text && text.length > 0) {
-          var tsDelete = objApp.LoadStringFromFile(languangeFileName, "strDelete");
-          var index = 0;
-          for (var i = 0; i < text.length; i++) {
-            var name = text[i];
-
-            name = htmlEncode(name);
-            if (isCurDocEditing) {
-              var html =
-                "<div class='bookmark' index=%1><span class='tag wiz_pc_icon icon-tag'></span><a class='bookmark' href='javascript:void(0);' onclick=\"gotoBookmark('" +
-                name + "');\">" + name + "</a><span class='bk-action-del wiz_pc_icon icon-cancel'></span></div>";
-              html = html.replace('%1', index).replace('%2', tsDelete);
-              htmlBookmarkText += html;
-              //
-              arrayBookmarks.push(name);
-              index++;
-            } else {
-              var html =
-                "<div class='bookmark' ><span class='tag wiz_pc_icon icon-tag'></span><a class='bookmark' href='javascript:void(0);' onclick=\"gotoBookmark('" +
-                name + "');\"><nobr>" + name + "</nobr></a></div>";
-              htmlBookmarkText += html;
-            }
+            added = true;
+          } else if (tagName == "h2") {
+            html = '<div class="box h2"><a class="head" href="javascript:void(0);" onclick="gotoElem(' +
+              offsetTop + ');"><span class="head wiz_pc_icon icon-dot_common"></span>' + text + '</a></div>';
+            //
+            added = true;
+          } else if (tagName == "h3") {
+            html = '<div class="box h3"><a class="head" href="javascript:void(0);" onclick="gotoElem(' +
+              offsetTop + ');"><span class="head wiz_pc_icon icon-dot_common"></span>' + text + '</a></div>';
+            //
+            added = true;
+          } else if (tagName == "h4") {
+            html = '<div class="box h4"><a class="head" href="javascript:void(0);" onclick="gotoElem(' +
+              offsetTop + ');"><span class="head wiz_pc_icon icon-dot_common"></span>' + text + '</a></div>';
+            //
+            added = true;
+          } else if (tagName == "h5") {
+            html = '<div class="box h5"><a class="head" href="javascript:void(0);" onclick="gotoElem(' +
+              offsetTop + ');"><span class="head wiz_pc_icon icon-dot_common"></span>' + text + '</a></div>';
+            //
+            added = true;
+          } else if (tagName == "h6") {
+            html = '<div class="box h6"><a class="head" href="javascript:void(0);" onclick="gotoElem(' +
+              offsetTop + ');"><span class="head wiz_pc_icon icon-dot_common"></span>' + text + '</a></div>';
+            //
             added = true;
           }
+          htmlOutlineText += html;
         }
-        var tsBookmark = objApp.LoadStringFromFile(languangeFileName, "strBookmark");
-        var tsNoBookmark = objApp.LoadStringFromFile(languangeFileName, "strNoBookmark");
-        //
-        var html = '<hr class="seperator" />';
-        if (added) {
-          htmlBookmarkText = '<div id="wiz-outline-bookmarks"><div class="category">' + tsBookmark + '</div>' +
-            htmlBookmarkText + '</div>';
-        } else {
-          htmlBookmarkText = '<div id="wiz-outline-bookmarks"><div class="category">' + tsBookmark +
-            '</div><div class="title">' + tsNoBookmark + '</div></div>';
+      }
+      var tsOutline = objApp.LoadStringFromFile(languangeFileName, "strOutline");
+      var tsNoOutlineTitle = objApp.LoadStringFromFile(languangeFileName, "strNoOutlineTitle");
+      var tsNoOutlineSubTitle = objApp.LoadStringFromFile(languangeFileName, "strNoOutlineSubTitle");
+      //
+      if (added) {
+        htmlOutlineText = '<div><div class="category">' + tsOutline + '</div><div id="heads">' + htmlOutlineText +
+          '</div></div>';
+      } else {
+        htmlOutlineText = '<div><div class="category">' + tsOutline + '</div><div class="title">' +
+          tsNoOutlineTitle + '</div><div class="subtitle">' + tsNoOutlineSubTitle + '</div></div>';
+      }
+      isAddOutlineContents = true;
+      Show();      
+    }
+    //
+    async function loadBookmarks() {
+      var scriptfile = pluginPath + "getBookmarks.js";
+      const text = await browserObject.ExecuteScriptFile(scriptfile);
+      var added = false;
+      //
+      if (text && text.length > 0) {
+        var tsDelete = objApp.LoadStringFromFile(languangeFileName, "strDelete");
+        var index = 0;
+        for (var i = 0; i < text.length; i++) {
+          var name = text[i];
+
+          name = htmlEncode(name);
+          if (isCurDocEditing) {
+            var html =
+              "<div class='bookmark' index=%1><span class='tag wiz_pc_icon icon-tag'></span><a class='bookmark' href='javascript:void(0);' onclick=\"gotoBookmark('" +
+              name + "');\">" + name + "</a><span class='bk-action-del wiz_pc_icon icon-cancel'></span></div>";
+            html = html.replace('%1', index).replace('%2', tsDelete);
+            htmlBookmarkText += html;
+            //
+            arrayBookmarks.push(name);
+            index++;
+          } else {
+            var html =
+              "<div class='bookmark' ><span class='tag wiz_pc_icon icon-tag'></span><a class='bookmark' href='javascript:void(0);' onclick=\"gotoBookmark('" +
+              name + "');\"><nobr>" + name + "</nobr></a></div>";
+            htmlBookmarkText += html;
+          }
+          added = true;
         }
-        htmlBookmarkText = html + htmlBookmarkText;
-        isAddBookmarks = true;
-        Show();
+      }
+      var tsBookmark = objApp.LoadStringFromFile(languangeFileName, "strBookmark");
+      var tsNoBookmark = objApp.LoadStringFromFile(languangeFileName, "strNoBookmark");
+      //
+      var html = '<hr class="seperator" />';
+      if (added) {
+        htmlBookmarkText = '<div id="wiz-outline-bookmarks"><div class="category">' + tsBookmark + '</div>' +
+          htmlBookmarkText + '</div>';
+      } else {
+        htmlBookmarkText = '<div id="wiz-outline-bookmarks"><div class="category">' + tsBookmark +
+          '</div><div class="title">' + tsNoBookmark + '</div></div>';
+      }
+      htmlBookmarkText = html + htmlBookmarkText;
+      isAddBookmarks = true;
+      Show();
+      //
+      //
+      (function initBookmarkMenu() {
         //
-        //
-        (function initBookmarkMenu() {
-          //
-          function deleteBookmark(name) {
-            var elems = document.getElementsByName(name);
-            if (elems && elems.length > 0) {
-              for (var i = 0; i < elems.length; i++) {
-                var elem = elems[i];
-                elem.name = "";
-              }
+        function deleteBookmark(name) {
+          var elems = document.getElementsByName(name);
+          if (elems && elems.length > 0) {
+            for (var i = 0; i < elems.length; i++) {
+              var elem = elems[i];
+              elem.name = "";
             }
           }
-          browserObject.ExecuteScript(deleteBookmark.toString());
+        }
+        browserObject.ExecuteScript(deleteBookmark.toString());
+        //
+        function onActionDelete(e) {
+          var p = e.target.parentElement;
+          if (!p)
+            return;
+          var index = Number(p.getAttribute("index"));
+          if (index < 0)
+            return;
           //
-          function onActionDelete(e) {
-            var p = e.target.parentElement;
-            if (!p)
-              return;
-            var index = Number(p.getAttribute("index"));
-            if (index < 0)
-              return;
-            //
-            p.parentNode.removeChild(p);
-            //
-            var name = arrayBookmarks[index];
-            browserObject.ExecuteFunction1("deleteBookmark", name);
-          }
-          var arrBtns = document.getElementsByClassName("bk-action-del");
+          p.parentNode.removeChild(p);
           //
-          for (var i = 0; i < arrBtns.length; i++) {
-            var btn = arrBtns[i];
-            //
-            btn.addEventListener('click', onActionDelete);
-          }
-        })();
-      });
+          var name = arrayBookmarks[index];
+          browserObject.ExecuteFunction1("deleteBookmark", name);
+        }
+        var arrBtns = document.getElementsByClassName("bk-action-del");
+        //
+        for (var i = 0; i < arrBtns.length; i++) {
+          var btn = arrBtns[i];
+          //
+          btn.addEventListener('click', onActionDelete);
+        }
+      })();
     }
 
     //
