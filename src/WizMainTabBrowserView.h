@@ -3,6 +3,7 @@
 
 #include <QTabWidget>
 #include <QAbstractButton>
+#include <QQueue>
 #include "share/WizWebEngineView.h"
 #include "WizDocumentWebView.h"
 
@@ -37,6 +38,27 @@ private:
     void drawTabBtn(const QStyleOptionButton *option, QPainter *painter, const QWidget *widget = nullptr) const;
 };
 
+class WizTabPageRecycler : public QThread
+{
+    Q_OBJECT
+
+public:
+    WizTabPageRecycler(QObject *parent);
+    ~WizTabPageRecycler();
+
+    void addPageWidget(QWidget *wgt);
+    void stop();
+
+protected:
+    void run();
+
+private:
+    QQueue<QWidget *> m_widgets;
+    volatile bool m_stopped;
+    QWaitCondition m_widgetAdded;
+    QMutex m_mutex;
+};
+
 class WizMainTabBrowserView : public QTabWidget
 {
     Q_OBJECT
@@ -55,6 +77,7 @@ private:
     WizExplorerApp& m_app;
     WizDatabaseManager& m_dbMgr;
     QString m_strTheme;
+    WizTabPageRecycler *m_recycler;
 
 signals:
     void titleChanged(const QString &title);

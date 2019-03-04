@@ -133,7 +133,9 @@ void WizDocumentEditStatusSyncThread::waitForDone()
 {
     stop();
     //
-    WizWaitForThread(this);
+    //WizWaitForThread(this);
+    disconnect();
+    wait();
 }
 
 void WizDocumentEditStatusSyncThread::run()

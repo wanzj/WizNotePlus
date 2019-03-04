@@ -149,6 +149,8 @@ WizMainTabBrowserView::WizMainTabBrowserView(WizExplorerApp& app, QWidget *paren
     //setCornerWidget(p, Qt::TopLeftCorner);
     // 处理标签切换信号
     connect(this, &QTabWidget::currentChanged, this, &WizMainTabBrowserView::handleCurrentChanged);
+    //
+    m_recycler = new WizTabPageRecycler(this);
 }
 
 void WizMainTabBrowserView::handleCurrentChanged(int index)
@@ -337,16 +339,7 @@ void WizMainTabBrowserView::closeTab(int index)
     QWidget* p = widget(index);
     if (!p) return;
     removeTab(index);
-    WizDocumentView* docView = qobject_cast<WizDocumentView*>(p);
-    if (docView) {
-        //
-        docView->waitForDone();
-    }
-    //
-    //p->deleteLater(); // 这种销毁方式会引起空指针错误。
-    delete p;
-    p = nullptr;
-    docView = nullptr;
+    m_recycler->addPageWidget(p);
 }
 
 void WizMainTabBrowserView::closeOtherTabs(int index)
@@ -585,4 +578,80 @@ void WizMainTabBrowserView::initStyleBaseOption(QStyleOptionTabBarBase *optTabBa
         }
         optTabBase->rect = rect;
     }
+}
+
+WizTabPageRecycler::WizTabPageRecycler(QObject *parent)
+    : QThread(parent)
+{
+    m_stopped = false;
+    start();
+}
+
+WizTabPageRecycler::~WizTabPageRecycler()
+{
+    {
+        QMutexLocker locker(&m_mutex);
+        while (!m_widgets.isEmpty())
+            m_widgets.dequeue()->deleteLater();
+        stop();
+        m_widgetAdded.wakeOne();
+    }
+    wait();
+}
+
+void WizTabPageRecycler::addPageWidget(QWidget *wgt)
+{
+    QMutexLocker locker(&m_mutex);
+    wgt->setParent(nullptr);
+    m_widgets.enqueue(wgt);
+    m_widgetAdded.wakeOne();
+}
+
+void WizTabPageRecycler::stop()
+{
+    m_stopped = true;
+}
+
+void WizTabPageRecycler::run()
+{
+    QWidget *wgt = nullptr;
+    while (!m_stopped) {
+        {
+            QMutexLocker locker(&m_mutex);
+
+            if (m_widgets.isEmpty())
+                m_widgetAdded.wait(&m_mutex);
+            // 注意，这里会引起奔溃
+            if (m_stopped)
+                return;
+            wgt = m_widgets.dequeue();
+            //
+            WizDocumentView *docView = qobject_cast<WizDocumentView *>(wgt);
+            if (docView) {
+                switch (docView->saveState()) {
+                case WizDocumentView::None :
+                    docView->waitForSave();
+                    m_widgets.enqueue(docView);
+                    break;
+                case WizDocumentView::Saving :
+                    m_widgets.enqueue(docView);
+                    break;
+                case WizDocumentView::Done :
+                    //FIXME: Find out why app gets crashed when deleting WizDocumentView.
+                    msleep(1000);
+                    docView->deleteLater();
+                    qDebug() << "Deleted WizDocumentView";
+                    break;
+                default:
+                    break;
+                }
+            } else {
+                wgt->deleteLater();
+                qDebug() << "Deleted Widget";
+            }
+            
+        }
+
+    }
+    m_stopped = false;
 }

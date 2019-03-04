@@ -2844,7 +2844,9 @@ void WizDocumentWebViewLoaderThread::waitForDone()
 {
     stop();
     //
-    WizWaitForThread(this);
+    //WizWaitForThread(this);
+    disconnect();
+    wait();
 }
 
 void WizDocumentWebViewLoaderThread::run()
@@ -2973,7 +2975,9 @@ void WizDocumentWebViewSaverThread::waitForDone()
 {
     stop();
     //
-    WizWaitForThread(this);
+    //WizWaitForThread(this);
+    disconnect();
+    wait();
 }
 
 void WizDocumentWebViewSaverThread::stop()

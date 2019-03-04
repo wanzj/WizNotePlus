@@ -63,6 +63,7 @@ WizDocumentView::WizDocumentView(WizExplorerApp& app, QWidget* parent)
     , m_defaultViewMode(app.userSettings().noteViewMode())
     , m_transitionView(new WizDocumentTransitionView(this))
     , m_bLocked(false)
+    , m_saveState(None)
     , m_editorMode(modeReader)
     , m_noteLoaded(false)
     , m_editStatusSyncThread(new WizDocumentEditStatusSyncThread(this))
@@ -224,7 +225,9 @@ WizDocumentView::WizDocumentView(WizExplorerApp& app, QWidget* parent)
 WizDocumentView::~WizDocumentView()
 {
     if (m_editStatusChecker)
-       delete m_editStatusChecker;
+        delete m_editStatusChecker;
+    if (m_web)
+        delete m_web;
 }
 
 QSize WizDocumentView::sizeHint() const
@@ -237,6 +240,10 @@ void WizDocumentView::setSizeHint(QSize size)
     m_sizeHint = size;
 }
 
+/**
+ * @brief Wait for WizDocumentView finishing work.
+ * 
+ */
 void WizDocumentView::waitForDone()
 {
     m_editStatusChecker->thread()->quit();
@@ -250,11 +257,30 @@ void WizDocumentView::waitForDone()
         //
         done = true;
     });
-    //
+    
     while (!done)
     {
         QApplication::processEvents();
     }
+}
+
+/**
+ * @brief Wait for WizDocumentView saving document.
+ * 
+ *     You should check the `saveState()` to determine whether WizDocumentView
+ *     finishes saving or not.
+ * 
+ */
+void WizDocumentView::waitForSave()
+{
+    m_editStatusChecker->thread()->quit();
+    m_editStatusSyncThread->waitForDone();
+    //
+    m_saveState = Saving;
+    m_web->trySaveDocument(m_note, false, [=](const QVariant& ret){
+        m_web->waitForDone();
+        m_saveState = Done;
+    });
 }
 
 /**
