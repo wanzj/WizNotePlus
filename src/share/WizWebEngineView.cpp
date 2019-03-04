@@ -1,4 +1,5 @@
 ﻿#include <QWebEngineView>
+#include <QWebEngineSettings>
 #include <QWebSocketServer>
 #include <QWebChannel>
 #include <QDesktopWidget>
@@ -106,7 +107,7 @@ QWebEngineProfile* createWebEngineProfile(const WizWebEngineViewInjectObjects& o
         script.setName("qwebchannel.js");
         script.setWorldId(QWebEngineScript::MainWorld);
         script.setInjectionPoint(QWebEngineScript::DocumentCreation);
-        script.setRunsOnSubFrames(true);
+        script.setRunsOnSubFrames(false); // if set True, it will cause some error in javascript.
         profile->scripts()->insert(script);
     }
     //
@@ -134,6 +135,11 @@ WizWebEnginePage::WizWebEnginePage(const WizWebEngineViewInjectObjects& objects,
     : QWebEnginePage(createWebEngineProfile(objects, parent), parent)
     , m_continueNavigate(true)
 {
+    QWebEngineSettings* st = settings();
+    st->setAttribute(QWebEngineSettings::FocusOnNavigationEnabled, true);
+    st->setAttribute(QWebEngineSettings::AllowWindowActivationFromJavaScript, true);
+    st->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
+    //
     if (!objects.empty()) {
 
         QWebChannel* channel = new QWebChannel();
@@ -382,6 +388,31 @@ QVariant WizWebEngineView::ExecuteFunction4(QString function, const QVariant& ar
             .arg(toArgument(arg4))
             ;
     return ExecuteScript(script);
+}
+
+/**
+ * @brief Set the zoom percentage of this page.
+ * 
+ * @param percent The range from 25 to 500. The default factor is 100.
+ */
+void WizWebEngineView::SetZoom(int percent)
+{
+    if ( percent < 25 && percent > 500)
+        return;
+    qreal factor = static_cast<qreal>(percent) / 100;
+    setZoomFactor(factor);
+}
+
+/**
+ * @brief Get the zoom percentage of this page.
+ * 
+ * @return int 
+ */
+int WizWebEngineView::GetZoom()
+{
+    qreal factor = zoomFactor();
+    int percent = static_cast<int>( qRound(factor * 100) );
+    return percent;
 }
 
 

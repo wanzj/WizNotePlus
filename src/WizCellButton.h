@@ -108,6 +108,7 @@ public:
     };
 
     explicit WizToolButton(QWidget* parent, int type = WithTextLabel);
+    void setIconSize(const QSize& size);
     void setNormalIcon(const QIcon& icon, const QString& strTips);
     void setCheckedIcon(const QIcon& icon, const QString& strTips);
     void setBadgeIcon(const QIcon& icon, const QString& strTips);

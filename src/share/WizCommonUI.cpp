@@ -49,3 +49,13 @@ QString WizCommonUI::clipboardToImage(int hwnd, const QString& strOptions)
     //
     return strFileName;
 }
+
+QString WizCommonUI::LoadTextFromFile(const QString& strFileName)
+{
+    return loadTextFromFile(strFileName);
+}
+
+QString WizCommonUI::ClipboardToImage(int hwnd, const QString& strOptions)
+{
+    return clipboardToImage(hwnd, strOptions);
+}

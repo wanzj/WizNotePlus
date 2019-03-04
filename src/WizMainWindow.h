@@ -65,7 +65,7 @@ class WizDocumentWebView;
 class WizTrayIcon;
 class WizMobileFileReceiver;
 class ICore;
-class WizMainTabBrowser;
+class WizMainTabBrowserView;
 
 class WizMessageListView;
 class WizMessageSelector;
@@ -75,6 +75,9 @@ class WizDocumentView;
 class WizDocumentWebViewSaverThread;
 class WizSingleDocumentViewDelegate;
 class QWebEngineView;
+class WizJSPluginManager;
+class WizPluginModuleData;
+class WizPluginHtmlDialog;
 
 class IWizExplorerApp; // interface
 
@@ -153,6 +156,7 @@ private:
     WizUpgradeChecker* m_upgrade;
     WizIAPDialog* m_iapDialog;
     WizTemplatePurchaseDialog* m_templateIAPDialog;
+    WizJSPluginManager* m_jsPluginMgr;
     //
     bool m_quiting;
 
@@ -199,7 +203,7 @@ private:
 
     WizDocumentSelectionView* m_documentSelection;
     WizDocumentView* m_doc; /**< 用于储存多标签浏览器里当前活动笔记文档视图。 */
-    WizMainTabBrowser* m_mainTabBrowser; /**< 主标签部件，笔记文档视图储存在内部 */
+    WizMainTabBrowserView* m_mainTabBrowserView; /**< 主标签部件，笔记文档视图储存在内部 */
     WizSplitter* m_splitter;
     WizSplitter* m_subSplitter;
     QStackedWidget* m_subContainer;
@@ -242,6 +246,7 @@ private:
     void initSyncQuick();
     void initActions();
     void initToolBar();
+    void initToolBarPluginButtons();
     void initClient();
     //
 #ifndef Q_OS_MAC
@@ -299,7 +304,8 @@ public:
 
     //
     void refreshAd();
-    WizMainTabBrowser* mainTabView();
+    WizMainTabBrowserView* mainTabBrowserView() { return m_mainTabBrowserView; };
+    WizJSPluginManager* jsPluginMgr() { return m_jsPluginMgr; };
     //
     void showTrash();
     void showSharedNotes(); 

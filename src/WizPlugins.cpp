@@ -5,13 +5,21 @@
 #include "utils/WizPathResolve.h"
 #include "widgets/WizLocalProgressWebView.h"
 
+#include <QApplication>
+#include <QDesktopWidget>
+#include <QToolBar>
+#include <QAction>
+#include <QStyle>
+#include <QDir>
 #include <QMovie>
 #include <QVBoxLayout>
+#include <QStyleFactory>
 #include <QLabel>
 #include <QPushButton>
 #include <QApplication>
 #include <QNetworkReply>
 #include <QWebEngineView>
+#include <QWebEngineSettings>
 #include "share/WizSettings.h"
 #include "share/WizWebEngineView.h"
 #include "share/WizMisc.h"
@@ -267,31 +275,49 @@ WizPluginData::WizPluginData(QString path, QObject* parent)
     , m_path(path)
 {
     WizPathAddBackslash(m_path);
-    QString fileName = m_path + "plugin.ini";
+    QString fileName = m_path + "manifest.ini";
     QString section = "Common";
     //
-    WizSettings plugin(fileName);
-    m_name = plugin.getString(section, "AppName");
-    m_type = plugin.getString(section, "Type");
-    m_guid = plugin.getString(section, "AppGUID");
-    m_scriptFileName = m_path + "index.html";
-    m_icon = WizLoadSkinIcon("", m_path + "plugin.svg", QSize(WizSmartScaleUIEx(14), WizSmartScaleUIEx(14)), ICON_OPTIONS);
+    m_settings = new WizSettings(fileName);
+    m_name = m_settings->getString(section, "AppName");
+    m_type = m_settings->getString(section, "Type");
+    m_guid = m_settings->getString(section, "AppGUID");
+    m_moduleCount = m_settings->getInt(section, "ModuleCount");
+    //
+    int realModuleCount = 0;
+    QStringList groups = m_settings->childGroups();
+    for (QString& pluginIndex : groups) {
+        if (!pluginIndex.contains("Module_"))
+            continue;
+        WizPluginModuleData* data = new WizPluginModuleData(pluginIndex, *m_settings, this);
+        //TODO: to validate the data, and if neccessary infomations are missed, discard it.
+        m_modules.push_back(data);
+        realModuleCount++;
+    }
+    if (realModuleCount != m_moduleCount)
+        qWarning() << QString("App %s's ModuleCount not correct!").arg(m_name);
 }
 //
 void WizPluginData::emitDocumentChanged()
 {
     emit documentChanged();
+    for (WizPluginModuleData* data : m_modules) {
+        data->emitDocumentChanged();
+    }
 }
 
 void WizPluginData::emitShowEvent()
 {
     emit willShow();
+    for (WizPluginModuleData* data : m_modules) {
+        data->emitShowEvent();
+    }
 }
 
 void WizPluginData::initStrings()
 {
     WizPathAddBackslash(m_path);
-    QString fileName = m_path + "plugin.ini";
+    QString fileName = m_path + "manifest.ini";
     //
     WizSettings plugin(fileName);
     CWizStdStringArray keys;
@@ -320,20 +346,53 @@ void WizPluginData::initStrings()
     m_strings = strings;
 }
 
+WizPluginModuleData::WizPluginModuleData(QString& section, WizSettings& setting, QObject* parent)
+    : QObject(parent)
+    , m_section(section)
+{
+    m_parentPlugin = qobject_cast<WizPluginData*>(parent);
+    m_path = m_parentPlugin->path();
+    m_caption = setting.getString(section, "Caption");
+    m_guid = setting.getString(section, "GUID");
+    m_moduleType = setting.getString(section, "ModuleType");
+    //
+    m_slotType = setting.getString(section, "SlotType");
+    m_buttonLocation = setting.getString(section, "ButtonLocation");
+    m_menuLocation = setting.getString(section, "MenuLocation");
+    m_iconFileName = m_path + setting.getString(section, "IconFileName");
+    m_htmlFileName = m_path + setting.getString(section, "HtmlFileName");
+    m_scriptFileName = m_path + setting.getString(section, "ScriptFileName");
+    m_width = setting.getInt(section, "Width", 800);
+    m_height = setting.getInt(section, "Height", 500);
+}
 
-WizPluginPopupWidget::WizPluginPopupWidget(WizExplorerApp& app, WizPluginData* data, QWidget* parent)
+void WizPluginModuleData::emitDocumentChanged()
+{
+    emit documentChanged();
+}
+
+void WizPluginModuleData::emitShowEvent()
+{
+    emit willShow();
+}
+
+WizPluginSelectorWindow::WizPluginSelectorWindow(WizExplorerApp& app, WizPluginModuleData* data, QWidget* parent)
     : WizPopupWidget(parent)
     , m_data(data)
+    , m_windowWidth(data->width())
+    , m_windowHeight(data->height())
 {
-    data->initStrings();
+    data->parentPlugin()->initStrings();
     //
     WizMainWindow* mw = qobject_cast<WizMainWindow*>(app.mainWindow());
     WizWebEngineViewInjectObjects objects = {
-        {"WizPluginData", m_data},
+        {"WizPluginData", data->parentPlugin()},
+        {"WizPluginModuleData", data},
         {"WizExplorerApp", mw->componentInterface()}
     };
     m_web = new WizWebEngineView(objects, this);
     //
+    setContentsMargins(0, 8, 0, 0);
     QVBoxLayout* layout = new QVBoxLayout();
     layout->setContentsMargins(0, 0, 0, 0);
     setLayout(layout);
@@ -342,20 +401,68 @@ WizPluginPopupWidget::WizPluginPopupWidget(WizExplorerApp& app, WizPluginData* d
     //
     if (isDarkMode()) {
         QString html;
-        WizLoadUnicodeTextFromFile(m_data->scriptFileName(), html);
+        WizLoadUnicodeTextFromFile(m_data->htmlFileName(), html);
         QString style = "<link type=\"text/css\" href=\"nightModeStyle.css\" rel=\"stylesheet\" />";
         WizHTMLAppendTextInHead(style, html);
-        m_web->setHtml(html, QUrl::fromLocalFile(m_data->scriptFileName()));
+        m_web->setHtml(html, QUrl::fromLocalFile(m_data->htmlFileName()));
 
     } else {
-        m_web->load(QUrl::fromLocalFile(m_data->scriptFileName()));
+        m_web->load(QUrl::fromLocalFile(m_data->htmlFileName()));
     }
+}
+
+QSize WizPluginSelectorWindow::sizeHint() const
+{
+    return QSize(m_windowWidth, m_windowHeight);
+}
+
+WizPluginHtmlDialog::WizPluginHtmlDialog(WizExplorerApp& app, WizPluginModuleData* data, QWidget* parent)
+    : QWidget(parent, Qt::Window)
+    , m_data(data)
+    , m_dialogWidth(data->width())
+    , m_dialogHeight(data->height())
+{
+    data->parentPlugin()->initStrings();
+    //
+    setWindowTitle(data->caption());
+    //
+    WizMainWindow* mw = qobject_cast<WizMainWindow*>(app.mainWindow());
+    WizWebEngineViewInjectObjects objects = {
+        {"WizPluginData", data->parentPlugin()},
+        {"WizPluginModuleData", data},
+        {"WizExplorerApp", mw->componentInterface()}
+    };
+    m_web = new WizWebEngineView(objects, this);
+    QVBoxLayout* layout = new QVBoxLayout();
+    layout->setContentsMargins(0, 0, 0, 0);
+    setLayout(layout);
+    layout->addWidget(m_web);
+    //
+    m_web->load(QUrl::fromLocalFile(m_data->htmlFileName()));
+}
+
+QSize WizPluginHtmlDialog::dialogSize() const
+{
+    return QSize(m_dialogWidth, m_dialogHeight);
+}
+
+QSize WizPluginHtmlDialog::sizeHint() const
+{
+    return dialogSize();
 }
 
 WizPlugins::WizPlugins(QString basePath)
 {
     init(basePath);
 };
+
+WizPlugins::WizPlugins(QStringList basePath)
+{
+    QStringListIterator paths(basePath);
+    while (paths.hasNext())
+         init(paths.next());
+};
+
 
 WizPlugins::~WizPlugins()
 {
@@ -371,13 +478,11 @@ void WizPlugins::init(QString basePath)
     WizEnumFolders(basePath, folders, 0);
     //
     for (auto folder : folders) {
-        WizPluginData* data = new WizPluginData(folder, nullptr);
-        if (data->scriptFileName().isEmpty()) {
-            delete data;
+        if (!QDir(folder).exists("manifest.ini"))
             continue;
-        }
-        //
+        WizPluginData* data = new WizPluginData(folder, nullptr);
         m_data.push_back(data);
+        qDebug() << "Loaded plugin: " + data->name();
     }
 }
 
@@ -388,21 +493,188 @@ void WizPlugins::notifyDocumentChanged()
     }
 }
 
-std::vector<WizPluginData*> WizPlugins::pluginsByType(QString type) const
+WizPlugins& WizPlugins::plugins()
 {
-    WizPlugins& plugins = WizPlugins::plugins();
-    std::vector<WizPluginData*> ret;
-    for (auto data : plugins.m_data) {
-        if (data->type() == type) {
-            ret.push_back(data);
+    QStringList pluginBase = Utils::WizPathResolve::pluginsAllPath();
+    static WizPlugins plugins(pluginBase);
+    return plugins;
+}
+
+WizJSPluginManager::WizJSPluginManager(QStringList &pluginScanPathList, WizExplorerApp& app, QObject* parent)
+    : QObject(parent)
+    , m_app(app)
+{
+    for (QString &path : pluginScanPathList) {
+        loadPluginData(path);
+    }
+}
+
+WizJSPluginManager::~WizJSPluginManager()
+{
+    for (auto htmlDialog : m_pluginHtmlDialogCollection) {
+        delete htmlDialog;
+    }
+    m_pluginHtmlDialogCollection.clear();
+    
+    for (auto selectorWindow : m_pluginHtmlDialogCollection) {
+        delete selectorWindow;
+    }
+    m_pluginHtmlDialogCollection.clear();
+
+}
+
+void WizJSPluginManager::loadPluginData(QString &pluginScanPath)
+{
+    CWizStdStringArray folders;
+    WizEnumFolders(pluginScanPath, folders, 0);
+    
+    for (auto folder : folders) {
+        if (!QDir(folder).exists("manifest.ini"))
+            continue;
+        WizPluginData* data = new WizPluginData(folder, this);
+        m_pluginDataCollection.push_back(data);
+        qDebug() << "Loaded plugin: " + data->name();
+    }
+}
+
+QList<WizPluginModuleData *> WizJSPluginManager::modulesByButtonLocation(QString buttonLocation) const
+{
+    QList<WizPluginModuleData *> ret;
+    for (WizPluginData *pluginData : m_pluginDataCollection) {
+        for (WizPluginModuleData *moduleData : pluginData->modules()) {
+            if (moduleData->buttonLocation() == buttonLocation) {
+                ret.push_back(moduleData);
+            }
         }
     }
     return ret;
 }
 
-WizPlugins& WizPlugins::plugins()
+QList<WizPluginModuleData *> WizJSPluginManager::modulesByKeyValue(QString key, QString value) const
 {
-    QString pluginBase = Utils::WizPathResolve::pluginsPath();
-    static WizPlugins plugins(pluginBase);
-    return plugins;
+    QList<WizPluginModuleData *> ret;
+    for (WizPluginData *pluginData : m_pluginDataCollection) {
+        WizSettings *settings = pluginData->settings();
+        for (WizPluginModuleData *moduleData : pluginData->modules()) {
+            QString section = moduleData->section();
+            if (settings->getString(section, key) == value) {
+                ret.push_back(moduleData);
+            }
+        }
+    }
+    return ret;
+}
+
+WizPluginModuleData *WizJSPluginManager::moduleByGUID(QString guid) const
+{
+    WizPluginModuleData *ret = nullptr;
+    for (WizPluginData *pluginData : m_pluginDataCollection) {
+        for (WizPluginModuleData *moduleData : pluginData->modules()) {
+            if (moduleData->guid() == guid) {
+                ret = moduleData;
+            }
+        }
+    }
+
+    return ret;
+}
+
+QAction *WizJSPluginManager::createPluginAction(QWidget *parent, WizPluginModuleData *moduleData)
+{
+    QAction *ac = new QAction(parent);
+    ac->setData(moduleData->guid());
+    ac->setIcon(QIcon(moduleData->iconFileName()));
+    ac->setIconText(moduleData->caption());
+    ac->setText(moduleData->caption());
+    ac->setToolTip(moduleData->caption());
+    return ac;
+}
+
+WizPluginHtmlDialog *WizJSPluginManager::initPluginHtmlDialog(WizPluginModuleData *moduleData)
+{
+    WizPluginHtmlDialog *htmlDialog = new WizPluginHtmlDialog(m_app, moduleData, nullptr);
+    m_pluginHtmlDialogCollection.insert(moduleData->guid(), htmlDialog);
+    return htmlDialog;
+}
+
+WizPluginSelectorWindow *WizJSPluginManager::initPluginSelectorWindow(WizPluginModuleData *moduleData)
+{
+    WizPluginSelectorWindow *selectorWindow = new WizPluginSelectorWindow(m_app, moduleData, nullptr);
+    m_pluginPopupDialogCollection.insert(moduleData->guid(), selectorWindow);
+    return selectorWindow;
+}
+
+void WizJSPluginManager::showPluginHtmlDialog(WizPluginModuleData *moduleData)
+{
+    QString guid = moduleData->guid();
+    WizPluginHtmlDialog* dialog;
+    auto it = m_pluginHtmlDialogCollection.find(guid);
+    if ( it == m_pluginHtmlDialogCollection.end()) {
+        dialog = initPluginHtmlDialog(moduleData);
+    } else {
+        dialog = it.value();
+    }
+    //
+    moduleData->emitShowEvent();
+    dialog->setGeometry(
+        QStyle::alignedRect(
+            Qt::LeftToRight,
+            Qt::AlignCenter,
+            dialog->dialogSize(),
+            qApp->desktop()->availableGeometry()
+        )
+    );
+    dialog->show();
+    dialog->raise();
+}
+
+void WizJSPluginManager::showPluginSelectorWindow(WizPluginModuleData *moduleData, QPoint &pt)
+{
+    QString guid = moduleData->guid();
+    WizPluginSelectorWindow* selectorWindow;
+    auto it = m_pluginPopupDialogCollection.find(guid);
+    if ( it == m_pluginPopupDialogCollection.end()) {
+        selectorWindow = initPluginSelectorWindow(moduleData);
+    } else {
+        selectorWindow = it.value();
+    }
+    //
+    moduleData->emitShowEvent();
+    if (isDarkMode()) {
+        selectorWindow->web()->setVisible(false);
+        QTimer::singleShot(500, [=] {
+            selectorWindow->web()->setVisible(true);
+        });
+    }
+    selectorWindow->showAtPoint(pt);
+}
+
+void WizJSPluginManager::handlePluginActionTriggered()
+{
+    QAction *ac = qobject_cast<QAction *>(sender());
+    if (!ac)
+        return;
+
+    QString moduleGuid = ac->data().toString();
+    if (moduleGuid.isEmpty())
+        return;
+
+    WizPluginModuleData *moduleData = moduleByGUID(moduleGuid);
+    if (!moduleData)
+        return;
+
+    QString slotType = moduleData->slotType();
+    if ( slotType == "SelectorWindow" ) {
+        QToolBar *bar = qobject_cast<QToolBar *>(ac->parentWidget());
+        if (!bar)
+            return;
+        QToolButton *button = qobject_cast<QToolButton *>(bar->widgetForAction(ac));
+        if (!button)
+            return;
+        QRect rc = button->rect();
+        QPoint pt = button->mapToGlobal(QPoint(rc.width()/2, rc.height()));
+        showPluginSelectorWindow(moduleData, pt);
+    } else if ( slotType == "HtmlDialog" ) {
+        showPluginHtmlDialog(moduleData);
+    }
 }

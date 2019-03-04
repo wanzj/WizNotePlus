@@ -324,6 +324,11 @@ WizToolButton::WizToolButton(QWidget* parent, int type)
     }
 }
 
+void WizToolButton::setIconSize(const QSize& size)
+{
+    m_iconSize = size;
+}
+
 /**
  * @brief Set QIcon::off state icon pixmap.
  * @param icon

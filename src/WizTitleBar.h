@@ -84,8 +84,6 @@ public Q_SLOTS:
 
     void on_commentTokenAcquired(QString token);
     void on_commentCountAcquired(QString GUID, int count);
-    //
-    void onPluginButtonClicked();
 
     void onEditorChanged();
     void onEditorFocusIn();
@@ -133,8 +131,6 @@ private:
     WizToolButton* m_attachBtn;
 //    CellButton* m_historyBtn;
     WizToolButton* m_infoBtn;
-    //
-    std::vector<WizCellButton *> m_pluginsButton;
 
     QMenu* m_shareMenu;
 
@@ -148,9 +144,6 @@ private:
 
     QString m_strWebchannelUrl;
     WizAnimateAction* m_editButtonAnimation;
-    //
-    std::vector<WizPluginData*> m_plugins;
-    std::map<QString, WizPluginPopupWidget*>m_pluginWidget;
 };
 
 

@@ -12,7 +12,7 @@
 #include "WizDocumentView.h"
 #include "WizDocumentWebView.h"
 #include "WizMainWindow.h"
-#include "WizMainTabBrowser.h"
+#include "WizMainTabBrowserView.h"
 #include "WizEditorToolBar.h"
 #include "WizDocumentWebEngine.h"
 
@@ -241,9 +241,9 @@ void WizSingleDocumentViewDelegate::viewDocument(const WIZDOCUMENTDATA& doc)
                 SLOT(on_editor_statusChanged(const QString&)));
         connect(wgt, SIGNAL(documentViewerDeleted(QString)), SLOT(onDocumentViewerDeleted(QString)));
         static int nOffset = 0;
-        wgt->setGeometry((mainWindow->width() - mainWindow->mainTabView()->width())  / 2 + nOffset,
+        wgt->setGeometry((mainWindow->width() - mainWindow->mainTabBrowserView()->width())  / 2 + nOffset,
                          (mainWindow->height() - wgt->height()) / 2 + nOffset,
-                         mainWindow->mainTabView()->width(), wgt->height());
+                         mainWindow->mainTabBrowserView()->width(), wgt->height());
         wgt->setWindowTitle(doc.strTitle);
         wgt->show();
         nOffset += 22;

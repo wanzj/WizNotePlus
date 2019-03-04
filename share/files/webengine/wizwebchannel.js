@@ -341,29 +341,31 @@ function QObject(name, data, webChannel)
                     args.push(argument);
             }
 
-            webChannel.exec({
-                "type": QWebChannelMessageTypes.invokeMethod,
-                "object": object.__id__,
-                "method": methodIdx,
-                "args": args
-            }, function(response) {
-                if (response !== undefined) {
-                    var result = object.unwrapQObject(response);
-                    if (callback) {
+            return new Promise( resolve => {
+                webChannel.exec({
+                    "type": QWebChannelMessageTypes.invokeMethod,
+                    "object": object.__id__,
+                    "method": methodIdx,
+                    "args": args
+                }, response => {
+                    if (response !== undefined) {
+                        var result = object.unwrapQObject(response);
                         if (result && result instanceof QObject && result.resultAcquired && result.resultAcquired.connect) {
                             if (result.acquired) {
-                                (callback)(result.result);
+                                resolve(result.result);
                             } else {
                                 result.resultAcquired.connect(function (r) {
-                                  (callback)(r);
+                                    resolve(r);
                                 });
                             }
                         } else {
-                          (callback)(result);
+                            resolve(result);
                         }
+                        
                     }
-                }
+                });
             });
+
         };
     }
 

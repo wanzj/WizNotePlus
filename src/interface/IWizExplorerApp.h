@@ -4,6 +4,7 @@
 #include <QObject>
 
 class WizMainWindow;
+class WizCommonUI;
 class IWizExplorerWindow;
 class IWizCategoryCtrl;
 class IWizDocumentListCtrl;
@@ -15,6 +16,7 @@ class IWizExplorerApp : public QObject
 
 private:
     WizMainWindow* m_mainWindow;
+    WizCommonUI* m_commonUI;
     IWizExplorerWindow* m_window;
     IWizCategoryCtrl* m_categoryCtrl;
     IWizDocumentListCtrl* m_docListCtrl;
@@ -32,6 +34,9 @@ public:
 
     QObject* DocumentsCtrl();
     Q_PROPERTY(QObject* DocumentsCtrl READ DocumentsCtrl NOTIFY DocumentsCtrlChanged)
+
+    QObject* CommonUI();
+    Q_PROPERTY(QObject* CommonUI READ CommonUI NOTIFY CommonUIChanged)
 
     QObject* DatabaseManager();
     Q_PROPERTY(QObject* DatabaseManager READ DatabaseManager NOTIFY DatabaseManagerChanged)
@@ -57,6 +62,7 @@ signals:
     void CategoryCtrlChanged();
     void DocumentsCtrlChanged();
     void DatabaseManagerChanged();
+    void CommonUIChanged();
 };
 
 #endif // WIZEXPLORERAPP_H

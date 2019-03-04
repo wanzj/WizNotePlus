@@ -1,0 +1,293 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Outline</title>
+    <link type="text/css" href="style.css" rel="stylesheet"/>
+    <style type="text/css">
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: #cccccc;
+        }
+
+        html, body {
+            margin: 15px;
+            padding: 0;
+        }
+        html {
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+        body {
+            font-family: "Microsoft YaHei", Georgia, Helvetica, Arial, sans-serif, ����, serif, PMingLiU;
+            color: black;
+            background-color: #fff;
+            font-size: 10.5pt;
+            line-height: 1.5;
+        }
+        .box{
+            /*vertical-align: middle;
+            text-align: left;
+            display: block;*/
+            font-size: 14px;
+            /*height: 2em;*/
+            margin-left: 10px;
+            margin-bottom: 10px;
+        }
+        table {
+            empty-cells: show;
+            margin: 0;
+            padding: 0;
+        }
+        font {
+            font-size: 1em;
+        }
+        ul {
+            padding: 0 0 0 0;
+        }
+
+        .h1{
+            margin-left: 0;
+        }
+        .h2{
+            margin-left: 20px;
+        }
+        .h3{
+            margin-left: 40px;
+        }
+        .h4{
+            margin-left: 60px;
+        }
+        .h5{
+            margin-left: 80px;
+        }
+        .h6{
+            margin-left: 100px;
+        }
+        span{
+            margin: 0 10px 0 0;
+        }
+        span.h1, span.head{
+            color:#b2b2b2;
+        }
+        span.h1:hover, span.head:hover{
+            color:#448aff;
+        }
+        span.tag{
+            color:#448aff;
+        }
+        div.bookmark {
+            vertical-align: middle;
+            text-align: left;
+            display: block;
+            height: 34px;
+            line-height: 2.4em;
+            overflow: hidden;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        div.bookmark:hover {
+            background-color: #ebebeb;
+        }
+        a.bookmark {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #448aff;
+        }
+        p {
+            padding: 0;
+        }
+        div.category{
+            color:#cccccc;
+            font-size:12px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            margin-left: 8px;
+        }
+        div.title{
+            font-size: 1em; 
+            color:#333333; 
+            margin-left: 18px;
+            margin-top: 10px;
+        }
+        div.subtitle{
+            font-size: 0.8em;
+            color:#999999; 
+            margin-left: 18px;
+            margin-top: 5px;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            line-height: 1.2em;
+            font-size: 1em;
+            color: #26a8fa;
+            margin: 0.2em 0.4em 0.2em 0;
+            padding: 0.1em 0.1em 0.1em 0;
+        }
+        sup, sub {
+            font-size: .7em;
+        }
+        img {
+            border-style: none;
+            margin-bottom: 0.5em;
+        }
+        a{
+            outline: none;
+            color: #448aff;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        a:active, a:hover, a:hover > span {
+            color: blue;
+        }
+        a:visited{
+            color: #448aff;
+        }
+        a.head{
+            margin-left: 8px;
+        }
+        hr {
+            border: 0;
+            background-color: #EEE;
+            border-bottom: #c9d7f1 1px solid;
+            height: 0;
+            width: 99.9%;
+            text-align: left;
+            margin-top: 1em;
+            margin-bottom: 1em;
+        }
+        hr.seperator {
+            width: 100%;
+            height: 1px;
+            border: none;
+            background-color: #efefef;
+            margin-top: 35px;
+            margin-bottom: 15px;
+        }
+        div.my_group {
+            padding-top: 10px;
+            padding-bottom: 10px;
+            font-weight: bold;
+        }
+        input, select, textarea, option {
+            font-family: inherit;
+            font-size: inherit;
+        }
+        input.bk-action-del{
+            color: black;
+            cursor: pointer;
+            float: right;
+            margin: 0.6em 1em 0 0.2em;
+        }
+        span.bk-action-del {
+            color: #666666;
+            float:right;
+            line-height: 34px;
+        }
+        span.bk-action-del:hover {
+             text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <script language="javascript">
+    //
+    let inited = false;
+    var objApp;
+    var pluginPath;
+    var pluginData;
+    var objWindow;
+    var browserObject;
+    var htmltext = "";
+    var htmlOutlineText = "";
+    var htmlBookmarkText = "";
+    var arrayBookmarks = [];
+    var isAddOutlineContents = false;
+    var isAddBookmarks = false;
+    var isCurDocEditing = false;
+    var strings = {};
+    var languangeFileName;
+
+    async function initForWebEngine() {
+        objApp = window.WizExplorerApp;
+        pluginData = window.WizPluginData;
+        pluginPath = pluginData.path;
+        objWindow = objApp.Window;
+        browserObject = objWindow.CurrentDocumentBrowserObject;
+        strings = JSON.parse(pluginData.strings);
+        objApp.LoadStringFromFile = LoadStringFromFile;
+        //
+        languangeFileName = pluginPath + "manifest.ini";
+        //
+        const text = await browserObject.ExecuteScript("document.body.textContent");
+        if (text && text.length > 0) {
+            Show(text);
+        }
+    }
+    //
+    initForWebEngine();
+    //
+    function LoadStringFromFile(file, key) {
+      return strings[key];
+    }
+    //
+    function Show(content) {
+        //
+        var request = new XMLHttpRequest();
+        var url = 'https://note.wiz.cn/search/nlp';
+        request.open('POST', url);
+        request.setRequestHeader('Content-Type', 'application/json;charset=utf-8'); 
+        var queryjson = {content: content};    
+        var query = JSON.stringify(queryjson);
+        //
+        request.onreadystatechange = function () {
+            if(request.readyState === XMLHttpRequest.DONE && request.status === 200) {
+                var res = request.responseText;
+                if(typeof res == 'string') {
+                    try {
+                        var resJson = JSON.parse(res);
+                        if(resJson.returnCode && resJson.returnCode == 200 ) {
+                            var bodyHtml = "";
+                            bodyHtml += "<ul>";
+                            //	alert(resJson.result.length);
+                            for (i = 0; i< resJson.result.length; i++) {
+                                title = resJson.result[i].title;
+                                url = resJson.result[i].url;
+                                summary = resJson.result[i].summary;
+                                var part = summary.split("\n");
+                                if (part.length > 3) {
+                                    summary = part[0] + "\n" + part[1] + "\n" + part[2];
+                                }
+                                bodyHtml += "<li><a href='" + url + "' target=_blank>" + title + "<pre style='font-size:11pt; color: #999'>" + summary + "</pre></a> </li>";
+                            }
+                            bodyHtml += "</ul></div>";
+                            //
+                            document.body.innerHTML = bodyHtml;
+                        }
+                    
+                    } catch(e) {
+                        return e;
+                    }
+                }
+            }
+        };
+        //
+        request.send(query);
+    }
+	function htmlEncode(str) {
+	    var s = "";
+        if (str.length == 0) return "";
+        s = str.replace(/&/g, "&amp;");
+        s = s.replace(/</g, "&lt;");
+        s = s.replace(/>/g, "&gt;");
+        s = s.replace(/ /g, "&nbsp;");
+        s = s.replace(/\'/g, "&#39;");
+        s = s.replace(/\"/g, "&quot;");
+        s = s.replace(/\n/g, "<br>");
+        return s;
+	}
+    </script>
+</body>
+</html>
+

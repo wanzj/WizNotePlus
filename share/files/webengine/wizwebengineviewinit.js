@@ -5,6 +5,7 @@ new QWebChannel(qt.webChannelTransport, function (channel) {
         var key = objectNames[i];
         window[key] = channel.objects[key];
     }
+    console.log("web channel opened");
     //
     if (typeof initForWebEngine !== 'undefined') {
         try {

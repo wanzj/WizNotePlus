@@ -149,7 +149,7 @@ set(wiznote_SOURCES
     WizLineInputDialog.cpp
     WizDocumentHistory.cpp
     WizAttachmentListWidget.cpp
-    WizMainTabBrowser.cpp
+    WizMainTabBrowserView.cpp
     WizTagListWidget.cpp
     WizConsoleDialog.cpp
     WizPreferenceDialog.cpp
@@ -287,7 +287,7 @@ set(wiznote_HEADERS
     WizDocumentWebView.h
     WizDocumentHistory.h
     WizAttachmentListWidget.h
-    WizMainTabBrowser.h
+    WizMainTabBrowserView.h
     WizTagListWidget.h
     WizConsoleDialog.h
     WizPreferenceDialog.h

@@ -22,15 +22,15 @@ WizPopupWidget::WizPopupWidget(QWidget* parent)
 
 #ifdef Q_OS_LINUX
     if (isDarkMode()) {
-        setStyleSheet("QWidget{background:#373737;}");
+        setStyleSheet("WizPopupWidget{background:#373737;}");
     } else {
-        setStyleSheet("QWidget{background:#D7D7D7;}");
+        setStyleSheet("WizPopupWidget{background:#D7D7D7;}");
     }
 #elif defined(Q_OS_MAC)
     if (isDarkMode()) {
-        setStyleSheet("QWidget{background:#272727;}");
+        setStyleSheet("WizPopupWidget{background:#272727;}");
     } else {
-        setStyleSheet("QWidget{background:#F7F7F7;}");
+        setStyleSheet("WizPopupWidget{background:#F7F7F7;}");
     }
 #endif
 }

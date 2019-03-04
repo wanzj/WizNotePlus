@@ -1,5 +1,7 @@
 ﻿#include "WizTitleBar.h"
 
+#include <QApplication>
+#include <QDesktopWidget>
 #include <QVBoxLayout>
 #include <QUrl>
 #include <QMenu>
@@ -269,52 +271,17 @@ WizTitleBar::WizTitleBar(WizExplorerApp& app, QWidget *parent)
 void WizTitleBar::initPlugins(QToolBar* docToolbar)
 {
     int nTitleHeight = Utils::WizStyleHelper::titleEditorHeight();
-    m_plugins = WizPlugins::plugins().pluginsByType("document");
-    for (auto data : m_plugins) {
-        //
-        WizToolButton* button = new WizToolButton(this, WizCellButton::ImageOnly);
-        button->setUserObject(data);
-        button->setFixedHeight(nTitleHeight);
-        button->setIcon(data->icon());
-        button->setToolTip(data->name());
-        connect(button, SIGNAL(clicked()), SLOT(onPluginButtonClicked()));
-        docToolbar->addWidget(button);
-        //
-    }
-}
+    WizJSPluginManager *jsPluginMgr = WizGlobal::mainWindow()->jsPluginMgr();
+    QList<WizPluginModuleData *> modules = jsPluginMgr->modulesByKeyValue("ModuleType", "Action");
+    for (auto moduleData : modules) {
+        if (moduleData->buttonLocation() != "Document")
+            continue;
+        QAction *ac = jsPluginMgr->createPluginAction(docToolbar, moduleData);
+        connect(ac, &QAction::triggered, 
+            jsPluginMgr, &WizJSPluginManager::handlePluginActionTriggered);
 
-void WizTitleBar::onPluginButtonClicked()
-{
-    WizToolButton* button = dynamic_cast<WizToolButton *>(sender());
-    if (!button) {
-        return;
+        docToolbar->addAction(ac);
     }
-    //
-    WizPluginData* data = dynamic_cast<WizPluginData *>(button->userObject());
-    if (!data) {
-        return;
-    }
-    //
-    QString guid = data->guid();
-    auto it = m_pluginWidget.find(guid);
-    WizPluginPopupWidget* widget;
-    if (it == m_pluginWidget.end()) {
-        widget = new WizPluginPopupWidget(m_app, data, this);
-        m_pluginWidget.insert(std::make_pair(guid, widget));
-    } else {
-        widget = it->second;
-    }
-    //
-    QPoint pt = mapToGlobal(button->geometry().center());
-    pt.setY(pt.y() + button->rect().height() / 2);
-    data->emitShowEvent();
-    if (isDarkMode()) {
-        widget->web()->setVisible(false);
-        QTimer::singleShot(500, [=] {
-            widget->web()->setVisible(true);
-        });
-    }
-    widget->showAtPoint(pt);
 }
 
 /**

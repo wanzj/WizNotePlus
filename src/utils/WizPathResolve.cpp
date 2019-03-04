@@ -43,6 +43,15 @@ QString WizPathResolve::pluginsPath()
     return resourcesPath() + "plugins/";
 }
 
+QStringList WizPathResolve::pluginsAllPath()
+{
+    return {
+        resourcesPath() + "plugins/",
+        dataStorePath() + "plugins/"
+    };
+}
+
+
 
 QString WizPathResolve::skinResourcesPath(const QString &strSkinName)
 {
