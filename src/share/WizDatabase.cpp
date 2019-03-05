@@ -115,10 +115,16 @@ public:
 };
 
 
-WizDocument::WizDocument(WizDatabase& db, const WIZDOCUMENTDATA& data)
-    : m_db(db)
+WizDocument::WizDocument(WizDatabase& db, const WIZDOCUMENTDATA& data, QObject *parent)
+    : QObject(parent)
+    , m_db(db)
     , m_data(data)
 {
+}
+
+QObject *WizDocument::Database() const
+{
+    return &m_db;
 }
 
 void WizDocument::makeSureObjectDataExists()
@@ -4481,6 +4487,22 @@ QObject* WizDatabase::GetFolderByLocation(const QString& strLocation, bool creat
     Q_UNUSED(create);
 
     return new WizFolder(*this, strLocation);
+}
+
+QVariantList WizDatabase::DocumentsFromSQLWhere(const QString& strSQLWhere)
+{
+    CWizDocumentDataArray arrayDocument;
+    CString strSQL = formatQuerySQL(TABLE_NAME_WIZ_DOCUMENT, FIELD_LIST_WIZ_DOCUMENT, strSQLWhere);
+    sqlToDocumentDataArray(strSQL, arrayDocument);
+
+    QVariantList docList;
+    for (const WIZDOCUMENTDATA& data : arrayDocument) {
+        docList.push_back(
+            QVariant::fromValue<QObject *>(new WizDocument(*this, data, this))
+        );
+    }
+
+    return docList;
 }
 
 void WizDatabase::onAttachmentModified(const QString strKbGUID, const QString& strGUID,

@@ -19,10 +19,63 @@ class WizDocument : public QObject
     Q_OBJECT
 
 public:
-    WizDocument(WizDatabase& db, const WIZDOCUMENTDATA& data);
+    WizDocument(WizDatabase& db, const WIZDOCUMENTDATA& data, QObject *parent = nullptr);
 
     QString GUID() const { return m_data.strGUID; }
+    Q_PROPERTY(QString GUID READ GUID NOTIFY GUIDChanged)
 
+    QString Title() const { return m_data.strTitle; }
+    Q_PROPERTY(QString Title READ Title NOTIFY TitleChanged)
+
+    QString Author() const { return m_data.strAuthor; }
+    Q_PROPERTY(QString Author READ Author NOTIFY AuthorChanged)
+
+    QString Keywords() const { return m_data.strKeywords; }
+    Q_PROPERTY(QString Keywords READ Keywords NOTIFY KeywordsChanged)
+
+    QString Name() const { return m_data.strName; }
+    Q_PROPERTY(QString Name READ Name NOTIFY NameChanged)
+
+    QString Location() const { return m_data.strLocation; }
+    Q_PROPERTY(QString Location READ Location NOTIFY LocationChanged)
+
+    QString URL() const { return m_data.strURL; }
+    Q_PROPERTY(QString URL READ URL NOTIFY URLChanged)
+
+    QString Type() const { return m_data.strType; }
+    Q_PROPERTY(QString Type READ Type NOTIFY TypeChanged)
+
+    QString Owner() const { return m_data.strOwner; }
+    Q_PROPERTY(QString Owner READ Owner NOTIFY OwnerChanged)
+
+    QString FileType() const { return m_data.strFileType; }
+    Q_PROPERTY(QString FileType READ FileType NOTIFY FileTypeChanged)
+
+    long ReadCount() const { return m_data.nReadCount; }
+    Q_PROPERTY(long ReadCount READ ReadCount NOTIFY ReadCountChanged)
+
+    long AtachmentCount() const { return m_data.nAttachmentCount; }
+    Q_PROPERTY(long AtachmentCount READ AtachmentCount NOTIFY AtachmentCountChanged)
+
+    QString DateCreated() const { return m_data.tCreated.toString(Qt::ISODate); }
+    Q_PROPERTY(QString DateCreated READ DateCreated NOTIFY DateCreatedChanged)
+
+    QString DateModified() const { return m_data.tModified.toString(Qt::ISODate); }
+    Q_PROPERTY(QString DateModified READ DateModified NOTIFY DateModifiedChanged)
+
+    QString DateAccessed() const { return m_data.tAccessed.toString(Qt::ISODate); }
+    Q_PROPERTY(QString DateAccessed READ DateAccessed NOTIFY DateAccessedChanged)
+    
+    QString DataDateModified() const { return m_data.tDataModified.toString(Qt::ISODate); }
+    Q_PROPERTY(QString DataDateModified READ DataDateModified NOTIFY DataDateModifiedChanged)
+
+    QString DataMD5() const { return m_data.strDataMD5; }
+    Q_PROPERTY(QString DataMD5 READ DataMD5 NOTIFY DataMD5Changed)
+
+    QObject *Database() const;
+    Q_PROPERTY(QObject *Database READ Database NOTIFY DatabaseChanged)
+
+    //
     bool isProtected() const { return m_data.nProtected; }
     bool encryptDocument() { return false; }
 
@@ -40,6 +93,26 @@ public:
     bool removeTag(const WIZTAGDATA& dataTag);
 
     //
+signals:
+    void GUIDChanged();
+    void TitleChanged();
+    void AuthorChanged();
+    void KeywordsChanged();
+    void NameChanged();
+    void LocationChanged();
+    void URLChanged();
+    void TypeChanged();
+    void OwnerChanged();
+    void FileTypeChanged();
+    void ReadCountChanged();
+    void AtachmentCountChanged();
+    void DateCreatedChanged();
+    void DateModifiedChanged();
+    void DateAccessedChanged();
+    void DataDateModifiedChanged();
+    void DataMD5Changed();
+    void DatabaseChanged();
+
 public:
     Q_INVOKABLE void Delete();
     Q_INVOKABLE void PermanentlyDelete(void);
@@ -47,8 +120,6 @@ public:
     Q_INVOKABLE bool UpdateDocument4(const QString& strHtml, const QString& strURL, int nFlags);
     Q_INVOKABLE void deleteToTrash();   // would delete from server
     Q_INVOKABLE void deleteFromTrash();   // delete local file
-
-
 
 private:
     bool copyDocumentTo(const QString &sourceGUID, WizDatabase &targetDB, const QString &strTargetLocation,
@@ -511,6 +582,7 @@ public:
 public:
     Q_INVOKABLE QObject* GetDeletedItemsFolder();
     Q_INVOKABLE QObject* GetFolderByLocation(const QString& strLocation, bool create);
+    Q_INVOKABLE QVariantList DocumentsFromSQLWhere(const QString& strSQLWhere);
 
     //using CWizIndexBase::DocumentFromGUID;
     //Q_INVOKABLE QObject* DocumentFromGUID(const QString& strGUID);
