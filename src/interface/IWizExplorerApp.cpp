@@ -20,7 +20,7 @@ IWizExplorerApp::IWizExplorerApp(WizMainWindow* mw, QObject* parent)
 /** now just return WizExplorerApp, but should return REAL WizExplorerWindow */
 QObject* IWizExplorerApp::Window()
 {
-    return this;
+    return m_window;
 }
 
 /** return WizCategoryView's interface */
@@ -42,11 +42,6 @@ QObject* IWizExplorerApp::CommonUI()
 QObject* IWizExplorerApp::DatabaseManager()
 {
     return m_database;
-}
-
-QObject* IWizExplorerApp::CurrentDocumentBrowserObject()
-{
-    return m_mainWindow->CurrentDocumentBrowserObject();
 }
 
 QObject* IWizExplorerApp::CreateWizObject(const QString& strObjectID)

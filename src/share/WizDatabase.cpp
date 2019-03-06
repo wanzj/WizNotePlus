@@ -122,6 +122,26 @@ WizDocument::WizDocument(WizDatabase& db, const WIZDOCUMENTDATA& data, QObject *
 {
 }
 
+void WizDocument::setTitle(const QString &strTitle)
+{
+    if (updateDocumentInfo()) {
+        if (!m_db.canEditDocument(m_data))
+            return;
+        if (strTitle.isEmpty())
+            return;
+
+        QString strNewTitle = strTitle.left(255);
+        strNewTitle.replace("\n", " ");
+        strNewTitle.replace("\r", " ");
+        strNewTitle = strNewTitle.trimmed();
+        if (strNewTitle != m_data.strTitle) {
+            m_data.strTitle = strNewTitle;
+            m_data.tDataModified = WizGetCurrentTime();
+            m_db.modifyDocumentInfo(m_data);
+        }
+    }
+}
+
 QObject *WizDocument::Database() const
 {
     return &m_db;
@@ -146,6 +166,10 @@ bool WizDocument::UpdateDocument4(const QString& strHtml, const QString& strURL,
     return m_db.updateDocumentData(m_data, strHtml, strURL, nFlags);
 }
 
+/**
+ * @brief Delete from server
+ * 
+ */
 void WizDocument::deleteToTrash()
 {
     // move document to trash
@@ -165,6 +189,10 @@ void WizDocument::deleteToTrash()
     m_db.logDeletedGuid(m_data.strGUID, wizobjectDocument);
 }
 
+/**
+ * @brief Delete local file
+ * 
+ */
 void WizDocument::deleteFromTrash()
 {
     CWizDocumentAttachmentDataArray arrayAttachment;
@@ -203,6 +231,19 @@ QString WizDocument::GetParamValue(const QString &strParamName)
 bool WizDocument::SetParamValue(const QString &strParamName, const QString &strNewValue)
 {
     return m_db.setDocumentParam(m_data.strGUID, strParamName, strNewValue);
+}
+
+/**
+ * @brief Delete WizDocument instance to release memories.
+ * 
+ *     This method should be called by javascrip client when
+ *     the WizDocument object of specific document would no 
+ *     longer be used.
+ * 
+ */
+void WizDocument::Close()
+{
+    deleteLater();
 }
 
 bool WizDocument::isInDeletedItemsFolder()
@@ -471,6 +512,16 @@ bool WizDocument::copyDocumentAttachment(const WIZDOCUMENTDATA& sourceDoc,
     }
 
     return true;
+}
+
+/**
+ * @brief Used to sync document information holded by WizDocument with that of database.
+ * 
+ * @param data 
+ */
+bool WizDocument::updateDocumentInfo()
+{
+    return m_db.documentFromGuid(m_data.strGUID, m_data);
 }
 
 

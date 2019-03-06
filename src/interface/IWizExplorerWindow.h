@@ -13,6 +13,14 @@ private:
 
 public:
     IWizExplorerWindow(WizMainWindow* mw, QObject* parent);
+
+    QObject* CurrentDocumentBrowserObject();
+    Q_PROPERTY(QObject* CurrentDocumentBrowserObject READ CurrentDocumentBrowserObject NOTIFY CurrentDocumentBrowserObjectChanged)
+
+    Q_INVOKABLE QObject *CurrentDocument();
+
+signals:
+    void CurrentDocumentBrowserObjectChanged();
 };
 
 #endif // WIZEXPLORERWINDOW_H

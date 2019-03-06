@@ -25,7 +25,8 @@ public:
     Q_PROPERTY(QString GUID READ GUID NOTIFY GUIDChanged)
 
     QString Title() const { return m_data.strTitle; }
-    Q_PROPERTY(QString Title READ Title NOTIFY TitleChanged)
+    void setTitle(const QString &strTitle);
+    Q_PROPERTY(QString Title READ Title WRITE setTitle NOTIFY TitleChanged)
 
     QString Author() const { return m_data.strAuthor; }
     Q_PROPERTY(QString Author READ Author NOTIFY AuthorChanged)
@@ -118,17 +119,20 @@ public:
     Q_INVOKABLE void PermanentlyDelete(void);
     Q_INVOKABLE void moveTo(QObject* pFolder);
     Q_INVOKABLE bool UpdateDocument4(const QString& strHtml, const QString& strURL, int nFlags);
-    Q_INVOKABLE void deleteToTrash();   // would delete from server
-    Q_INVOKABLE void deleteFromTrash();   // delete local file
+    Q_INVOKABLE void deleteToTrash();
+    Q_INVOKABLE void deleteFromTrash();
 
     Q_INVOKABLE QString GetParamValue(const QString &strParamName);
     Q_INVOKABLE bool SetParamValue(const QString &strParamName, const QString &strNewValue);
+
+    Q_INVOKABLE void Close();
 
 private:
     bool copyDocumentTo(const QString &sourceGUID, WizDatabase &targetDB, const QString &strTargetLocation,
                         const WIZTAGDATA &targetTag, QString &resultGUID, bool keepDocTime);
     bool copyDocumentAttachment(const WIZDOCUMENTDATA& sourceDoc, WizDatabase& targetDB,
                                 WIZDOCUMENTDATA& targetDoc);
+    bool updateDocumentInfo();
 
 private:
     WizDatabase& m_db;
