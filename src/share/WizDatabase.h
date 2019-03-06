@@ -121,6 +121,9 @@ public:
     Q_INVOKABLE void deleteToTrash();   // would delete from server
     Q_INVOKABLE void deleteFromTrash();   // delete local file
 
+    Q_INVOKABLE QString GetParamValue(const QString &strParamName);
+    Q_INVOKABLE bool SetParamValue(const QString &strParamName, const QString &strNewValue);
+
 private:
     bool copyDocumentTo(const QString &sourceGUID, WizDatabase &targetDB, const QString &strTargetLocation,
                         const WIZTAGDATA &targetTag, QString &resultGUID, bool keepDocTime);
@@ -582,6 +585,7 @@ public:
 public:
     Q_INVOKABLE QObject* GetDeletedItemsFolder();
     Q_INVOKABLE QObject* GetFolderByLocation(const QString& strLocation, bool create);
+    Q_INVOKABLE QObject *DocumentFromGUID(const QString &strGUID);
     Q_INVOKABLE QVariantList DocumentsFromSQLWhere(const QString& strSQLWhere);
 
     //using CWizIndexBase::DocumentFromGUID;

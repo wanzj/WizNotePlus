@@ -128,6 +128,7 @@ public:
     bool getModifiedParams(CWizDocumentParamDataArray& arrayData);
 
     bool deleteDocumentParams(const QString& strDocumentGUID);
+    bool getDocumentParam(const QString& strDocumentGUID, const QString& strParamName, WIZDOCUMENTPARAMDATA &paramData);
     bool setDocumentParam(const QString& strDocumentGUID, const QString& strParamName, const QString& strParamValue);
     bool setDocumentParams(const QString& strDocumentGUID, const CWizDocumentParamDataArray& arrayParam);
     bool modifyDocumentParamVersion(const QString& strDocumentGUID, const QString& strParamName, __int64 version);

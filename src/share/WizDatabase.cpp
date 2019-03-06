@@ -190,6 +190,21 @@ void WizDocument::deleteFromTrash()
     }
 }
 
+QString WizDocument::GetParamValue(const QString &strParamName)
+{
+    WIZDOCUMENTPARAMDATA paramData;
+    if (m_db.getDocumentParam(m_data.strGUID, strParamName, paramData)) {
+        return paramData.strValue;
+    } else {
+        return "";
+    }
+}
+
+bool WizDocument::SetParamValue(const QString &strParamName, const QString &strNewValue)
+{
+    return m_db.setDocumentParam(m_data.strGUID, strParamName, strNewValue);
+}
+
 bool WizDocument::isInDeletedItemsFolder()
 {
     QString strDeletedItemsFolderLocation = m_db.getDeletedItemsLocation();
@@ -4487,6 +4502,15 @@ QObject* WizDatabase::GetFolderByLocation(const QString& strLocation, bool creat
     Q_UNUSED(create);
 
     return new WizFolder(*this, strLocation);
+}
+
+QObject *WizDatabase::DocumentFromGUID(const QString &strGUID)
+{
+    WIZDOCUMENTDATA data;
+    if (!documentFromGuid(strGUID, data))
+        return nullptr;
+    WizDocument* pDoc = new WizDocument(*this, data, this);
+    return pDoc;
 }
 
 QVariantList WizDatabase::DocumentsFromSQLWhere(const QString& strSQLWhere)
