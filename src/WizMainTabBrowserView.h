@@ -75,7 +75,8 @@ public slots:
     void lockTab(int index);
     void unlockTab(int index);
     void onViewNoteRequested(WizDocumentView* view, const WIZDOCUMENTDATAEX& doc, bool forceEditing);
-    void on_document_deleted(const WIZDOCUMENTDATA&);
+    void handleDocumentDeleted(const WIZDOCUMENTDATA&);
+    void handleDocumentModified(const WIZDOCUMENTDATA&, const WIZDOCUMENTDATA&);
 
 private:
     void setupView(WizWebEngineView* view);
@@ -84,6 +85,7 @@ private:
     void setupTab(QWidget* wgt);
     void paintEvent(QPaintEvent *);
     void initStyleBaseOption(QStyleOptionTabBarBase *optTabBase, QTabBar *tabbar, QSize size);
+    int indexFromDocumentGUID(const QString &strGUID);
 };
 
 #endif // WIZTABWIDGET_H

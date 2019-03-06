@@ -140,7 +140,8 @@ WizMainTabBrowserView::WizMainTabBrowserView(WizExplorerApp& app, QWidget *paren
     connect(tabBar, &QTabBar::customContextMenuRequested,
                     this, &WizMainTabBrowserView::handleContextMenuRequested);
     connect(tabBar, &QTabBar::tabCloseRequested, this, &WizMainTabBrowserView::closeTab);
-    connect(&m_dbMgr, &WizDatabaseManager::documentDeleted, this, &WizMainTabBrowserView::on_document_deleted);
+    connect(&m_dbMgr, &WizDatabaseManager::documentDeleted, this, &WizMainTabBrowserView::handleDocumentDeleted);
+    connect(&m_dbMgr, &WizDatabaseManager::documentModified, this, &WizMainTabBrowserView::handleDocumentModified);
     //
     setDocumentMode(true); // 不渲染tab widget frame
     setElideMode(Qt::ElideRight);
@@ -248,20 +249,44 @@ void WizMainTabBrowserView::onViewNoteRequested(WizDocumentView* view, const WIZ
 }
 
 /**
- * @brief Remove related tab page when recieve document deletion signal.
+ * @brief Used to find tab index of WizDocumentView.
+ * 
+ * @param strGUID 
+ * @return int 
  */
-void WizMainTabBrowserView::on_document_deleted(const WIZDOCUMENTDATA& data)
+int WizMainTabBrowserView::indexFromDocumentGUID(const QString &strGUID)
 {
     for (int i = 0; i < count(); ++i) {
         WizDocumentView* docView = qobject_cast<WizDocumentView*>(widget(i));
-        if ( docView == nullptr ) {
-            continue;
-        } else {
-            QString noteGUID = data.strGUID;
-            if (noteGUID == docView->note().strGUID)
-                closeTab(i);
+        if (docView) {
+            if (strGUID == docView->note().strGUID)
+                return i;
         }
+    }
 
+    return -1;
+}
+
+/**
+ * @brief Remove related tab page when recieve document deletion signal.
+ */
+void WizMainTabBrowserView::handleDocumentDeleted(const WIZDOCUMENTDATA& data)
+{
+    int index = indexFromDocumentGUID(data.strGUID);
+    if (index != -1) {
+        closeTab(index);
+    }
+}
+
+/**
+ * @brief Update document title on tab.
+ * 
+ */
+void WizMainTabBrowserView::handleDocumentModified(const WIZDOCUMENTDATA& documentOld, const WIZDOCUMENTDATA& documentNew) 
+{
+    int index = indexFromDocumentGUID(documentOld.strGUID);
+    if (index != -1) {
+        setTabText(index, documentNew.strTitle);
     }
 }
 
