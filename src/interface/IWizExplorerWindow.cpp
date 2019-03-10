@@ -32,3 +32,12 @@ QObject *IWizExplorerWindow::CurrentDocument()
         return nullptr;
     }
 }
+
+void IWizExplorerWindow::ViewDocument(QObject *pWizDocument, bool vbOpenInNewTab /* = true */)
+{
+    WizDocument *doc = qobject_cast<WizDocument *>(pWizDocument);
+    if (doc) {
+        WIZDOCUMENTDATAEX docData(doc->data());
+        m_mainWindow->viewDocument(docData);
+    }
+}

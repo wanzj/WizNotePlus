@@ -124,7 +124,7 @@ WizDocument::WizDocument(WizDatabase& db, const WIZDOCUMENTDATA& data, QObject *
 
 void WizDocument::setTitle(const QString &strTitle)
 {
-    if (updateDocumentInfo()) {
+    if (reloadDocumentInfo()) {
         if (!m_db.canEditDocument(m_data))
             return;
         if (strTitle.isEmpty())
@@ -216,6 +216,15 @@ void WizDocument::deleteFromTrash()
     {
         WizDeleteFile(strZipFileName);
     }
+}
+
+/**
+ * @brief Reload this document information from database.
+ * 
+ */
+void WizDocument::Reload()
+{
+    reloadDocumentInfo();
 }
 
 QString WizDocument::GetParamValue(const QString &strParamName)
@@ -519,7 +528,7 @@ bool WizDocument::copyDocumentAttachment(const WIZDOCUMENTDATA& sourceDoc,
  * 
  * @param data 
  */
-bool WizDocument::updateDocumentInfo()
+bool WizDocument::reloadDocumentInfo()
 {
     return m_db.documentFromGuid(m_data.strGUID, m_data);
 }
@@ -529,8 +538,9 @@ bool WizDocument::updateDocumentInfo()
 * Class CWizFolder
 */
 
-WizFolder::WizFolder(WizDatabase& db, const QString& strLocation)
-    : m_db(db)
+WizFolder::WizFolder(WizDatabase& db, const QString& strLocation, QObject *parent)
+    : QObject(parent)
+    , m_db(db)
     , m_strLocation(strLocation)
 {
     Q_ASSERT(strLocation.right(1) == "/");
@@ -547,16 +557,22 @@ bool WizFolder::isInDeletedItems() const
     return !isDeletedItems() && location().startsWith(LOCATION_DELETED_ITEMS);
 }
 
-//QObject* CWizFolder::CreateDocument2(const QString& strTitle, const QString& strURL)
-//{
-//    WIZDOCUMENTDATA data;
-//    if (!m_db.CreateDocument(strTitle, "", m_strLocation, strURL, data))
-//        return NULL;
-//
-//    CWizDocument* pDoc = new CWizDocument(m_db, data);
-//
-//    return pDoc;
-//}
+QObject* WizFolder::CreateDocument2(const QString& strTitle, const QString& strURL)
+{
+   WIZDOCUMENTDATA data;
+   CString strHtml = "<!DOCTYPE html><html><head></head><body><p><br></p></body></html>";
+   if (!m_db.createDocumentAndInit(strHtml, "", 0, strTitle, "newnote", m_strLocation, strURL, data))
+       return nullptr;
+
+   WizDocument* pDoc = new WizDocument(m_db, data, this);
+
+   return pDoc;
+}
+
+void WizFolder::Close()
+{
+    deleteLater();
+}
 
 void WizFolder::Delete()
 {
@@ -4547,12 +4563,24 @@ bool WizDatabase::isFileAccessible(const WIZDOCUMENTDATA& document)
     return true;
 }
 
-
-QObject* WizDatabase::GetFolderByLocation(const QString& strLocation, bool create)
+/**
+ * @brief Get a WizFolder by location.
+ * 
+ * @param strLocation 
+ * @param bCreate If the location does not exist, create one.
+ * @return QObject* 
+ */
+QObject* WizDatabase::GetFolderByLocation(const QString& strLocation, bool bCreate)
 {
-    Q_UNUSED(create);
+    if (strLocation.right(1) != "/" || strLocation.left(1) != "/")
+        return nullptr;
+        
+    if (bCreate) {
+        addExtraFolder(strLocation);
+        //TODO: 通知 WizCategoryView 更新目录树
+    }
 
-    return new WizFolder(*this, strLocation);
+    return new WizFolder(*this, strLocation, this);
 }
 
 QObject *WizDatabase::DocumentFromGUID(const QString &strGUID)

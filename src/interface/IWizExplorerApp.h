@@ -41,6 +41,9 @@ public:
     QObject* DatabaseManager();
     Q_PROPERTY(QObject* DatabaseManager READ DatabaseManager NOTIFY DatabaseManagerChanged)
 
+    QObject* Database();
+    Q_PROPERTY(QObject* Database READ Database NOTIFY DatabaseChanged)
+
     Q_INVOKABLE QObject* CreateWizObject(const QString& strObjectID);
     Q_INVOKABLE void SetSavingDocument(bool saving);
     Q_INVOKABLE void ProcessClipboardBeforePaste(const QVariantMap& data);
@@ -59,6 +62,7 @@ signals:
     void CategoryCtrlChanged();
     void DocumentsCtrlChanged();
     void DatabaseManagerChanged();
+    void DatabaseChanged();
     void CommonUIChanged();
 };
 

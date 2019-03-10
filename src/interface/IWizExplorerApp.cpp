@@ -44,6 +44,11 @@ QObject* IWizExplorerApp::DatabaseManager()
     return m_database;
 }
 
+QObject* IWizExplorerApp::Database()
+{
+    return m_database->Database();
+}
+
 QObject* IWizExplorerApp::CreateWizObject(const QString& strObjectID)
 {
     return m_mainWindow->CreateWizObject(strObjectID);

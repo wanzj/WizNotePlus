@@ -93,6 +93,8 @@ public:
     bool addTag(const WIZTAGDATA& dataTag);
     bool removeTag(const WIZTAGDATA& dataTag);
 
+    WIZDOCUMENTDATA data() { return m_data; }
+
     //
 signals:
     void GUIDChanged();
@@ -122,6 +124,8 @@ public:
     Q_INVOKABLE void deleteToTrash();
     Q_INVOKABLE void deleteFromTrash();
 
+    Q_INVOKABLE void Reload();
+
     Q_INVOKABLE QString GetParamValue(const QString &strParamName);
     Q_INVOKABLE bool SetParamValue(const QString &strParamName, const QString &strNewValue);
 
@@ -132,7 +136,7 @@ private:
                         const WIZTAGDATA &targetTag, QString &resultGUID, bool keepDocTime);
     bool copyDocumentAttachment(const WIZDOCUMENTDATA& sourceDoc, WizDatabase& targetDB,
                                 WIZDOCUMENTDATA& targetDoc);
-    bool updateDocumentInfo();
+    bool reloadDocumentInfo();
 
 private:
     WizDatabase& m_db;
@@ -148,7 +152,7 @@ class WizFolder : public QObject
     Q_PROPERTY(QString location READ location)
 
 public:
-    WizFolder(WizDatabase& db, const QString& strLocation);
+    WizFolder(WizDatabase& db, const QString& strLocation, QObject *parent = nullptr);
 
     bool isDeletedItems() const;
     bool isInDeletedItems() const;
@@ -162,7 +166,9 @@ public:
     Q_INVOKABLE void Delete();
     Q_INVOKABLE void moveTo(QObject* dest);
     Q_INVOKABLE QString location() const { return m_strLocation; }
-    //QObject* CreateDocument2(const QString& strTitle, const QString& strURL);
+    Q_INVOKABLE QObject* CreateDocument2(const QString& strTitle, const QString& strURL);
+
+    Q_INVOKABLE void Close();
 
 protected:
     WizDatabase& m_db;
@@ -588,7 +594,7 @@ public:
 
 public:
     Q_INVOKABLE QObject* GetDeletedItemsFolder();
-    Q_INVOKABLE QObject* GetFolderByLocation(const QString& strLocation, bool create);
+    Q_INVOKABLE QObject* GetFolderByLocation(const QString& strLocation, bool bCreate);
     Q_INVOKABLE QObject *DocumentFromGUID(const QString &strGUID);
     Q_INVOKABLE QVariantList DocumentsFromSQLWhere(const QString& strSQLWhere);
 
