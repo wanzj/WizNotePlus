@@ -1148,7 +1148,7 @@ bool WizLoadTextFromResource(const QString& resourceName, QString& text)
 }
 
 
-bool WizSaveUnicodeTextToUtf16File(const CString& strFileName, const CString& strText)
+bool WizSaveUnicodeTextToUtf16File(const QString& strFileName, const QString& strText)
 {
     QFile file(strFileName);
     if (!file.open(QIODevice::WriteOnly))
