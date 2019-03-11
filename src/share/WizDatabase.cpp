@@ -142,6 +142,30 @@ void WizDocument::setTitle(const QString &strTitle)
     }
 }
 
+/**
+ * @brief Should not be used to change DT_MODIFIED.
+ * 
+ * @param strDateModified 
+ */
+void WizDocument::setDateModified(const QString &strDateModified)
+{
+    if (strDateModified.isEmpty())
+        return;
+
+    if (!m_db.canEditDocument(m_data))
+        return;
+
+    QDateTime dm = QDateTime::fromString(strDateModified, Qt::ISODate);
+    if (!dm.isValid())
+        return;
+
+    if (reloadDocumentInfo()) {
+        WizOleDateTime dateModified(dm);
+        m_data.tDataModified = dateModified;
+        m_db.modifyDocumentInfo(m_data);
+    }
+}
+
 QObject *WizDocument::Database() const
 {
     return &m_db;
@@ -164,6 +188,31 @@ void WizDocument::makeSureObjectDataExists()
 bool WizDocument::UpdateDocument4(const QString& strHtml, const QString& strURL, int nFlags)
 {
     return m_db.updateDocumentData(m_data, strHtml, strURL, nFlags);
+}
+
+/**
+ * @brief Update document data via html file name and url.
+ * 
+ * @param strHtmlFileName File must be unicode format.
+ * @param strURL 
+ * @param nFlags 
+ * @return true 
+ * @return false 
+ */
+bool WizDocument::UpdateDocument6(const QString &strHtmlFileName, const QString &strURL, int nFlags)
+{
+    if (strHtmlFileName.isEmpty())
+        return false;
+
+    if (!m_db.canEditDocument(m_data))
+        return false;
+
+    QString strHtml;
+    if (WizLoadUnicodeTextFromFile(strHtmlFileName, strHtml)) {
+        return m_db.updateDocumentData(m_data, strHtml, strURL, nFlags);
+    } else {
+        return false;
+    }
 }
 
 /**

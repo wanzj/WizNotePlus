@@ -62,7 +62,8 @@ public:
     Q_PROPERTY(QString DateCreated READ DateCreated NOTIFY DateCreatedChanged)
 
     QString DateModified() const { return m_data.tModified.toString(Qt::ISODate); }
-    Q_PROPERTY(QString DateModified READ DateModified NOTIFY DateModifiedChanged)
+    void setDateModified(const QString &strDateModified);
+    Q_PROPERTY(QString DateModified READ DateModified WRITE setDateModified NOTIFY DateModifiedChanged)
 
     QString DateAccessed() const { return m_data.tAccessed.toString(Qt::ISODate); }
     Q_PROPERTY(QString DateAccessed READ DateAccessed NOTIFY DateAccessedChanged)
@@ -121,6 +122,7 @@ public:
     Q_INVOKABLE void PermanentlyDelete(void);
     Q_INVOKABLE void moveTo(QObject* pFolder);
     Q_INVOKABLE bool UpdateDocument4(const QString& strHtml, const QString& strURL, int nFlags);
+    Q_INVOKABLE bool UpdateDocument6(const QString &strHtmlFileName, const QString &strURL, int nFlags);
     Q_INVOKABLE void deleteToTrash();
     Q_INVOKABLE void deleteFromTrash();
 
