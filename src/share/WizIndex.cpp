@@ -1958,6 +1958,26 @@ bool WizIndex::setDocumentParam(const QString& strDocumentGUID, const QString& s
     return updateDocumentParam(data);
 }
 
+/**
+ * @brief Delete the whole PARAM record, not only set PARAM_VALUE to null.
+ * 
+ * @param strDocumentGUID 
+ * @param strParamName 
+ * @return true 
+ * @return false 
+ */
+bool WizIndex::removeDocumentParam(const QString& strDocumentGUID, const QString& strParamName)
+{
+    CString strSQL = WizFormatString3("delete from %1 where DOCUMENT_GUID='%2' and PARAM_NAME='%3'",
+                                      TABLE_NAME_WIZ_DOCUMENT_PARAM,
+                                      strDocumentGUID,
+                                      strParamName);
+    if (!execSQL(strSQL))
+        return false;
+
+    return true;    
+}
+
 bool WizIndex::setDocumentParams(const QString& strDocumentGuid, const CWizDocumentParamDataArray& arrayParam)
 {
     deleteDocumentParams(strDocumentGuid);

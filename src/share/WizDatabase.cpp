@@ -292,6 +292,18 @@ bool WizDocument::SetParamValue(const QString &strParamName, const QString &strN
 }
 
 /**
+ * @brief Delete param-value pair.
+ * 
+ * @param strParamName 
+ * @return true 
+ * @return false 
+ */
+bool WizDocument::RemoveParam(const QString &strParamName)
+{
+    return m_db.removeDocumentParam(m_data.strGUID, strParamName);
+}
+
+/**
  * @brief Delete WizDocument instance to release memories.
  * 
  *     This method should be called by javascrip client when

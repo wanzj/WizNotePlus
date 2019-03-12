@@ -130,6 +130,7 @@ public:
 
     Q_INVOKABLE QString GetParamValue(const QString &strParamName);
     Q_INVOKABLE bool SetParamValue(const QString &strParamName, const QString &strNewValue);
+    Q_INVOKABLE bool RemoveParam(const QString &strParamName);
 
     Q_INVOKABLE void Close();
 
