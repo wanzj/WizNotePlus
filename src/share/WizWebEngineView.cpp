@@ -131,8 +131,28 @@ void WizWebEngineAsyncMethodResultObject::setResult(const QVariant& result)
     emit resultAcquired(m_result);
 }
 
-WizWebEnginePage::WizWebEnginePage(const WizWebEngineViewInjectObjects& objects, QObject* parent)
-    : QWebEnginePage(createWebEngineProfile(objects, parent), parent)
+// WizWebEnginePage::WizWebEnginePage(const WizWebEngineViewInjectObjects& objects, QObject* parent)
+//     : QWebEnginePage(createWebEngineProfile(objects, parent), parent)
+//     , m_continueNavigate(true)
+// {
+//     QWebEngineSettings* st = settings();
+//     st->setAttribute(QWebEngineSettings::FocusOnNavigationEnabled, true);
+//     st->setAttribute(QWebEngineSettings::AllowWindowActivationFromJavaScript, true);
+//     st->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
+//     //
+//     if (!objects.empty()) {
+
+//         QWebChannel* channel = new QWebChannel();
+//         for (auto inject : objects) {
+//             channel->registerObject(inject.name, inject.object);
+//         }
+//         //
+//         setWebChannel(channel);
+//     }
+// }
+
+WizWebEnginePage::WizWebEnginePage(const WizWebEngineViewInjectObjects& objects, QWebEngineProfile * profile, QObject* parent)
+    : QWebEnginePage(profile, parent)
     , m_continueNavigate(true)
 {
     QWebEngineSettings* st = settings();
@@ -228,6 +248,21 @@ WizWebEngineView::WizWebEngineView(const WizWebEngineViewInjectObjects& objects,
     : QWebEngineView(parent)
 {
     WizWebEnginePage* p = new WizWebEnginePage(objects, this);
+    setPage(p);
+    //
+    connect(p, SIGNAL(openLinkInNewWindow(QUrl)), this, SLOT(openLinkInDefaultBrowser(QUrl)));
+    connect(this, SIGNAL(loadFinished(bool)), this, SLOT(innerLoadFinished(bool)));
+}
+
+WizWebEngineView::WizWebEngineView(const WizWebEngineViewInjectObjects& objects, bool createProfile, QWidget* parent)
+    : QWebEngineView(parent)
+{
+    WizWebEnginePage* p;
+    if (createProfile) {
+        p = new WizWebEnginePage(objects, this);
+    } else {
+        p = new WizWebEnginePage(objects, QWebEngineProfile::defaultProfile(), this);
+    }
     setPage(p);
     //
     connect(p, SIGNAL(openLinkInNewWindow(QUrl)), this, SLOT(openLinkInDefaultBrowser(QUrl)));

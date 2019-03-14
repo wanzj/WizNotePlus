@@ -23,6 +23,8 @@
 #include "share/WizSettings.h"
 #include "share/WizWebEngineView.h"
 #include "share/WizMisc.h"
+#include "WizWebsiteView.h"
+#include "WizMainTabBrowserView.h"
 
 struct LOCAL_LCID_DATA
 {
@@ -604,6 +606,20 @@ WizPluginSelectorWindow *WizJSPluginManager::initPluginSelectorWindow(WizPluginM
     return selectorWindow;
 }
 
+WizWebsiteView *WizJSPluginManager::initPluginMainTabView(WizPluginModuleData *moduleData)
+{
+    WizWebEngineViewInjectObjects objects = {
+        {"WizPluginData", moduleData->parentPlugin()},
+        {"WizPluginModuleData", moduleData},
+        {"WizExplorerApp", WizMainWindow::instance()->componentInterface()}
+    };
+    WizWebEngineView *webView = new WizWebEngineView(objects, false, nullptr);
+    QPointer<WizWebsiteView> websiteView = new WizWebsiteView(webView, m_app);
+    websiteView->viewHtml(QUrl::fromLocalFile(moduleData->htmlFileName()));
+    m_pluginMainTabViewCollection.insert(moduleData->guid(), websiteView);
+    return websiteView;
+}
+
 void WizJSPluginManager::showPluginHtmlDialog(WizPluginModuleData *moduleData)
 {
     QString guid = moduleData->guid();
@@ -649,6 +665,25 @@ void WizJSPluginManager::showPluginSelectorWindow(WizPluginModuleData *moduleDat
     selectorWindow->showAtPoint(pt);
 }
 
+void WizJSPluginManager::showPluginMainTabView(WizPluginModuleData *moduleData)
+{
+    QString guid = moduleData->guid();
+    QPointer<WizWebsiteView> mainTabView;
+    WizMainTabBrowserView *tabBrowser = WizMainWindow::instance()->mainTabBrowserView();
+    auto it = m_pluginMainTabViewCollection.find(guid);
+    if ( it == m_pluginMainTabViewCollection.end() || it.value().isNull() ) {
+        // create one
+        mainTabView = initPluginMainTabView(moduleData);
+        tabBrowser->createTab(mainTabView);
+    } else {
+        mainTabView = it.value();
+        if (!mainTabView.isNull())
+            tabBrowser->setCurrentWidget(mainTabView);
+    }
+    //
+    moduleData->emitShowEvent();
+}
+
 void WizJSPluginManager::handlePluginActionTriggered()
 {
     QAction *ac = qobject_cast<QAction *>(sender());
@@ -676,5 +711,7 @@ void WizJSPluginManager::handlePluginActionTriggered()
         showPluginSelectorWindow(moduleData, pt);
     } else if ( slotType == "HtmlDialog" ) {
         showPluginHtmlDialog(moduleData);
+    } else if ( slotType == "MainTabView") {
+        showPluginMainTabView(moduleData);
     }
 }

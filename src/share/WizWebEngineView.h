@@ -40,11 +40,15 @@ Q_SIGNALS:
     void resultAcquired(const QVariant& ret);
 };
 
+QWebEngineProfile* createWebEngineProfile(const WizWebEngineViewInjectObjects& objects, QObject* parent);
+
 class WizWebEnginePage: public QWebEnginePage
 {
     Q_OBJECT
 public:
-    explicit WizWebEnginePage(const WizWebEngineViewInjectObjects& objects, QObject* parent = 0);
+    explicit WizWebEnginePage(const WizWebEngineViewInjectObjects& objects, QObject* parent = 0) 
+        : WizWebEnginePage(objects, createWebEngineProfile(objects, parent), parent) {};
+    WizWebEnginePage(const WizWebEngineViewInjectObjects& objects, QWebEngineProfile * profile, QObject* parent = 0);
     //
     void stopCurrentNavigation() { m_continueNavigate = false; }
 protected:
@@ -68,6 +72,7 @@ class WizWebEngineView : public QWebEngineView
 public:
     WizWebEngineView(QWidget* parent);
     WizWebEngineView(const WizWebEngineViewInjectObjects& objects, QWidget* parent);
+    WizWebEngineView(const WizWebEngineViewInjectObjects& objects, bool createProfile, QWidget* parent);
     virtual ~WizWebEngineView();
     
 public:

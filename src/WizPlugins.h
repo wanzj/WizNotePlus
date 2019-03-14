@@ -10,6 +10,7 @@ class WizWebEngineView;
 class WizExplorerApp;
 class WizPluginSelectorWindow;
 class WizPluginData;
+class WizWebsiteView;
 
 class WizPluginModuleData : public QObject
 {
@@ -186,10 +187,15 @@ public:
     WizPluginModuleData *moduleByGUID(QString guid) const;
     //
     static QAction *createPluginAction(QWidget *parent, WizPluginModuleData *moduleData);
+
     WizPluginHtmlDialog *initPluginHtmlDialog(WizPluginModuleData *moduleData);
     void showPluginHtmlDialog(WizPluginModuleData *moduleData);
+
     WizPluginSelectorWindow *initPluginSelectorWindow(WizPluginModuleData *moduleData);
     void showPluginSelectorWindow(WizPluginModuleData *moduleData, QPoint &pt);
+
+    WizWebsiteView *initPluginMainTabView(WizPluginModuleData *moduleData);
+    void showPluginMainTabView(WizPluginModuleData *moduleData);
 
 private:
     void loadPluginData(QString &pluginScanPath);
@@ -202,6 +208,7 @@ private:
     QList<WizPluginData *> m_pluginDataCollection;
     QHash<QString, WizPluginHtmlDialog *> m_pluginHtmlDialogCollection;
     QHash<QString, WizPluginSelectorWindow *> m_pluginPopupDialogCollection;
+    QHash<QString, QPointer<WizWebsiteView > > m_pluginMainTabViewCollection;
 
 };
 
