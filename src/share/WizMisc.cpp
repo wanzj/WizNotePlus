@@ -1718,7 +1718,7 @@ QString WizGetSkinResourceFileName(const QString& strSkinName, const QString& st
     }
 
 #ifdef QT_DEBUG
-     qDebug() << strName;
+     //qDebug() << strName;
 #endif
     return QString();
 }

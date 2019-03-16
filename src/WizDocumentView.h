@@ -39,6 +39,13 @@ class WizDocumentView : public QWidget
     Q_OBJECT
 
 public:
+
+    enum SaveState {
+        None,
+        Saving,
+        Done
+    };
+
     WizDocumentView(WizExplorerApp& app, QWidget* parent = nullptr);
     ~WizDocumentView();
     virtual QSize sizeHint() const;
@@ -54,6 +61,7 @@ public:
     WizTitleBar* titleBar();
     //
     void waitForDone();
+    void waitForSave();
 
 protected:
     WizExplorerApp& m_app;
@@ -91,11 +99,13 @@ private:
     //
     int m_editStatus;  // document edit or version status
     QSize m_sizeHint;
+    SaveState m_saveState;
 
 public:
     const WIZDOCUMENTDATAEX& note() const { return m_note; }
     bool isLocked() const { return m_bLocked; }
     bool isEditing() const { return m_editorMode == modeEditor; }
+    SaveState saveState() const { return m_saveState; }
     WizEditorMode editorMode() const { return m_editorMode; }
     bool reload();
     void reloadNote();
