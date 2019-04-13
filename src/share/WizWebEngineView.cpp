@@ -142,7 +142,7 @@ WizWebEnginePage::WizWebEnginePage(const WizWebEngineViewInjectObjects& objects,
     //
     if (!objects.empty()) {
 
-        QWebChannel* channel = new QWebChannel();
+        QWebChannel* channel = new QWebChannel(this);
         for (auto inject : objects) {
             channel->registerObject(inject.name, inject.object);
         }
